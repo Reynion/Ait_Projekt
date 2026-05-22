@@ -1,0 +1,290 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase'
+import { extractYoutubeId, getThumbnailUrl } from '@/lib/youtube'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+
+interface Post {
+  id: number
+  title: string
+  artist: string | null
+  description: string | null
+  youtube_url: string | null
+  created_at: string
+  users: { nickname: string; avatar_url: string | null } | null
+  likeCount: number
+}
+
+type SortType = 'latest' | 'likes'
+type SearchType = 'title' | 'artist'
+
+const PAGE_SIZE = 20
+
+function Avatar({ url, nickname, size = 8 }: { url: string | null; nickname: string; size?: number }) {
+  const sizeClass = `w-${size} h-${size}`
+  return (
+    <div className={`relative ${sizeClass} rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0`}>
+      {url ? (
+        <Image src={url} alt={nickname} fill className="object-cover" unoptimized />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-zinc-400 text-base">👤</div>
+      )}
+    </div>
+  )
+}
+
+export default function PostList() {
+  const router = useRouter()
+  const [posts, setPosts] = useState<Post[]>([])
+  const [members, setMembers] = useState<string[]>([])
+  const [sort, setSort] = useState<SortType>('latest')
+  const [selectedMember, setSelectedMember] = useState<string>('all')
+
+  // 입력값 state
+  const [searchType, setSearchType] = useState<SearchType>('title')
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+
+  // 적용된 검색 state
+  const [appliedSearchType, setAppliedSearchType] = useState<SearchType>('title')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [appliedDateFrom, setAppliedDateFrom] = useState('')
+  const [appliedDateTo, setAppliedDateTo] = useState('')
+
+  const [currentPage, setCurrentPage] = useState(1)
+
+  function applySearch() {
+    setAppliedSearch(search)
+    setAppliedSearchType(searchType)
+    setAppliedDateFrom(dateFrom)
+    setAppliedDateTo(dateTo)
+    setCurrentPage(1)
+  }
+
+  function resetDates() {
+    setDateFrom('')
+    setDateTo('')
+    setAppliedDateFrom('')
+    setAppliedDateTo('')
+    setCurrentPage(1)
+  }
+
+  async function fetchPosts() {
+    const supabase = createClient()
+    const { data: postsData } = await supabase
+      .from('posts')
+      .select('*, users(nickname, avatar_url)')
+      .order('created_at', { ascending: false })
+
+    const { data: likesData } = await supabase
+      .from('likes')
+      .select('post_id, is_like')
+
+    const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(post => ({
+      ...post,
+      likeCount: (likesData ?? []).filter(l => l.post_id === post.id && l.is_like).length,
+    }))
+
+    setPosts(enriched)
+    setMembers(Array.from(new Set(enriched.map(p => p.users?.nickname).filter(Boolean) as string[])))
+  }
+
+  useEffect(() => {
+    fetchPosts()
+    const supabase = createClient()
+    const channel = supabase
+      .channel('posts-list')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchPosts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchPosts)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
+
+  const filtered = posts
+    .filter(post => {
+      const target = appliedSearchType === 'title' ? post.title : (post.artist ?? '')
+      const matchSearch = !appliedSearch || target.toLowerCase().includes(appliedSearch.toLowerCase())
+      const matchMember = selectedMember === 'all' || post.users?.nickname === selectedMember
+      const postDate = new Date(post.created_at)
+      const matchFrom = !appliedDateFrom || postDate >= new Date(appliedDateFrom)
+      const matchTo = !appliedDateTo || postDate <= new Date(appliedDateTo + 'T23:59:59')
+      return matchSearch && matchMember && matchFrom && matchTo
+    })
+    .sort((a, b) =>
+      sort === 'likes'
+        ? b.likeCount - a.likeCount
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* 검색 + 필터 */}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <select
+            value={searchType}
+            onChange={e => { setSearchType(e.target.value as SearchType); setSearch('') }}
+            className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+          >
+            <option value="title">곡 제목</option>
+            <option value="artist">아티스트</option>
+          </select>
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && applySearch()}
+            placeholder={searchType === 'title' ? '곡 제목 검색...' : '아티스트 검색...'}
+            className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+          />
+          <select
+            value={selectedMember}
+            onChange={e => { setSelectedMember(e.target.value); setCurrentPage(1) }}
+            className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+          >
+            <option value="all">전체 멤버</option>
+            {members.map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+          <button
+            onClick={applySearch}
+            className="bg-zinc-700 border border-zinc-600 text-zinc-200 text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:text-white transition-colors flex-shrink-0"
+          >
+            검색
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-zinc-400 flex-shrink-0">날짜</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+            className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
+          />
+          <span className="text-zinc-500 flex-shrink-0">~</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+            className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
+          />
+          <button
+            onClick={applySearch}
+            className="text-xs text-zinc-400 hover:text-white flex-shrink-0 px-3 py-2 border border-zinc-600 hover:border-zinc-400 rounded-lg transition-colors"
+          >
+            적용
+          </button>
+          {(appliedDateFrom || appliedDateTo) && (
+            <button
+              onClick={resetDates}
+              className="text-xs text-zinc-500 hover:text-zinc-200 flex-shrink-0 px-2 py-1 border border-zinc-700 hover:border-zinc-500 rounded-lg transition-colors"
+            >
+              초기화
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 정렬 탭 */}
+      <div className="flex gap-2">
+        {(['latest', 'likes'] as SortType[]).map(s => (
+          <button
+            key={s}
+            onClick={() => { setSort(s); setCurrentPage(1) }}
+            className={`px-3 py-1.5 rounded-lg border transition-colors ${
+              sort === s
+                ? 'bg-zinc-700 border-zinc-500 text-white'
+                : 'bg-transparent border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+            }`}
+          >
+            {s === 'latest' ? '최신순' : '추천순'}
+          </button>
+        ))}
+        <span className="ml-auto text-sm text-zinc-500 self-center">총 {filtered.length}개</span>
+      </div>
+
+      {filtered.length === 0 && (
+        <div className="text-center text-zinc-500 py-20">
+          {posts.length === 0 ? '아직 제안된 음악이 없습니다. 첫 번째로 제안해보세요!' : '검색 결과가 없습니다.'}
+        </div>
+      )}
+
+      <ul className="flex flex-col gap-3">
+        {paginated.map((post, idx) => {
+          const youtubeId = post.youtube_url ? extractYoutubeId(post.youtube_url) : null
+          const thumbnail = youtubeId ? getThumbnailUrl(youtubeId) : null
+          const seq = filtered.length - ((currentPage - 1) * PAGE_SIZE + idx)
+
+          return (
+            <li
+              key={post.id}
+              onClick={() => router.push(`/posts/${post.id}`)}
+              className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-all cursor-pointer flex gap-4 items-start"
+            >
+              <span className="text-sm text-zinc-500 font-mono w-7 flex-shrink-0 pt-1 text-right">{seq}</span>
+              {thumbnail ? (
+                <div className="relative w-36 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
+                  <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
+                </div>
+              ) : (
+                <div className="w-36 h-24 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-3xl">🎵</div>
+              )}
+              <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                <h3 className="font-semibold text-lg text-white truncate">{post.title}</h3>
+                {post.artist && <p className="text-zinc-400">{post.artist}</p>}
+                {post.description && <p className="text-zinc-300 line-clamp-2">{post.description}</p>}
+                <div className="flex items-center gap-2 mt-auto pt-1">
+                  <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} size={7} />
+                  <span className="text-zinc-300 font-medium">{post.users?.nickname ?? '알 수 없음'}</span>
+                  <span className="text-zinc-600">·</span>
+                  <span className="text-zinc-500">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span className="text-zinc-400 ml-auto font-medium">👍 {post.likeCount}</span>
+                </div>
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-1 pt-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            이전
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                page === currentPage
+                  ? 'bg-zinc-700 border-zinc-500 text-white'
+                  : 'border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
+          >
+            다음
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
