@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 
-export default function ScheduleNewPage() {
+function ScheduleNewForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const defaultDate = searchParams.get('date') ?? ''
@@ -187,5 +187,13 @@ export default function ScheduleNewPage() {
         </form>
       </section>
     </main>
+  )
+}
+
+export default function ScheduleNewPage() {
+  return (
+    <Suspense>
+      <ScheduleNewForm />
+    </Suspense>
   )
 }
