@@ -228,26 +228,26 @@ export default function PostList() {
             <li
               key={post.id}
               onClick={() => router.push(`/posts/${post.id}`)}
-              className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-all cursor-pointer flex gap-4 items-start"
+              className="bg-zinc-800 border border-zinc-700 rounded-xl p-3 hover:border-zinc-500 transition-all cursor-pointer flex gap-3 items-center"
             >
-              <span className="text-sm text-zinc-500 font-mono w-7 flex-shrink-0 pt-1 text-right">{seq}</span>
+              <span className="text-xs text-zinc-500 font-mono w-6 flex-shrink-0 text-right">{seq}</span>
               {thumbnail ? (
-                <div className="relative w-24 h-16 sm:w-36 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
+                <div className="relative w-20 h-14 sm:w-32 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
                   <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="w-24 h-16 sm:w-36 sm:h-24 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-2xl sm:text-3xl">🎵</div>
+                <div className="w-20 h-14 sm:w-32 sm:h-20 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl sm:text-2xl">🎵</div>
               )}
-              <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                <h3 className="font-semibold text-lg text-white truncate">{post.title}</h3>
-                {post.artist && <p className="text-zinc-400">{post.artist}</p>}
-                {post.description && <p className="text-zinc-300 line-clamp-2">{post.description}</p>}
-                <div className="flex items-center gap-2 mt-auto pt-1">
-                  <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} size={7} />
-                  <span className="text-zinc-300 font-medium">{post.users?.nickname ?? '알 수 없음'}</span>
-                  <span className="text-zinc-600">·</span>
-                  <span className="text-zinc-500">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                  <span className="text-zinc-400 ml-auto font-medium">👍 {post.likeCount}</span>
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                <h3 className="font-semibold text-sm sm:text-base text-white truncate">{post.title}</h3>
+                {post.artist && <p className="text-xs text-zinc-400 truncate">{post.artist}</p>}
+                {post.description && <p className="text-xs text-zinc-500 line-clamp-1 sm:line-clamp-2">{post.description}</p>}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} size={6} />
+                  <span className="text-xs text-zinc-300 font-medium truncate max-w-[5rem] sm:max-w-none">{post.users?.nickname ?? '알 수 없음'}</span>
+                  <span className="text-zinc-600 flex-shrink-0">·</span>
+                  <span className="text-xs text-zinc-500 flex-shrink-0">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span className="text-xs text-zinc-400 ml-auto flex-shrink-0 font-medium">👍 {post.likeCount}</span>
                 </div>
               </div>
             </li>
