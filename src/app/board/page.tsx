@@ -137,7 +137,7 @@ export default function BoardPage() {
               검색
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-zinc-400 flex-shrink-0">날짜</span>
             <input
               type="date"

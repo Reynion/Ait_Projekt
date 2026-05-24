@@ -127,7 +127,7 @@ export default function RecordEditPage() {
               <input type="text" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required className={inputClass} />
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex flex-col gap-1.5 flex-1">
                 <label className="text-sm font-medium text-zinc-300">날짜 *</label>
                 <input type="date" value={form.record_date} onChange={e => setForm(f => ({ ...f, record_date: e.target.value }))} required className={inputClass} />

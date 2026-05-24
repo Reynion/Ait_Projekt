@@ -112,7 +112,7 @@ function ScheduleNewForm() {
             />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex flex-col gap-1.5 flex-1">
               <label className="text-sm text-zinc-300 font-medium">시작일 *</label>
               <input

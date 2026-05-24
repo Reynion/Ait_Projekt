@@ -115,7 +115,7 @@ export default function RecordDetailPage() {
               <div
                 key={idx}
                 onClick={() => setSelectedImg(url)}
-                className="relative w-28 h-24 rounded-xl overflow-hidden border border-zinc-600 cursor-pointer hover:border-zinc-400 transition-colors"
+                className="relative w-20 h-16 sm:w-28 sm:h-24 rounded-xl overflow-hidden border border-zinc-600 cursor-pointer hover:border-zinc-400 transition-colors"
               >
                 <Image src={url} alt="" fill className="object-cover" unoptimized />
               </div>

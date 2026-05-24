@@ -159,13 +159,13 @@ export default function PollDetailPage() {
                   isVoted ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-700 hover:border-zinc-500'
                 }`}
               >
-                <div className="flex gap-4 items-center">
+                <div className="flex gap-3 items-center">
                   {thumbnail ? (
-                    <div className="relative w-20 h-14 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
+                    <div className="relative w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
                       <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
                     </div>
                   ) : (
-                    <div className="w-20 h-14 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl">🎵</div>
+                    <div className="w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl">🎵</div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-white truncate">{post.title}</p>
@@ -176,7 +176,7 @@ export default function PollDetailPage() {
                     <button
                       onClick={() => handleVote(candidate.id)}
                       disabled={voting}
-                      className={`flex-shrink-0 px-4 py-2 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
                         isVoted
                           ? 'bg-blue-600 border-blue-500 text-white'
                           : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'

@@ -109,14 +109,14 @@ export default function SchedulePage() {
     <main className="flex min-h-screen flex-col bg-zinc-950">
       <Navbar />
 
-      <div className="flex flex-1 gap-0 max-w-7xl w-full mx-auto px-4 py-6">
+      <div className="flex flex-col lg:flex-row flex-1 gap-0 max-w-7xl w-full mx-auto px-4 py-6">
         {/* 달력 */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* 헤더 */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
               <button onClick={prevMonth} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">‹</button>
-              <h2 className="text-xl font-bold text-white">{viewYear}년 {viewMonth + 1}월</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-white">{viewYear}년 {viewMonth + 1}월</h2>
               <button onClick={nextMonth} className="p-2 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors">›</button>
             </div>
             <div className="flex items-center gap-3">
@@ -126,7 +126,7 @@ export default function SchedulePage() {
               </div>
               <Link
                 href={`/schedule/new${selectedDate ? `?date=${selectedDate}` : ''}`}
-                className="bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors"
+                className="bg-zinc-700 border border-zinc-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors whitespace-nowrap"
               >
                 + 일정 추가
               </Link>
@@ -156,7 +156,7 @@ export default function SchedulePage() {
                 <div
                   key={idx}
                   onClick={() => setSelectedDate(dateStr)}
-                  className={`bg-zinc-900 min-h-[90px] p-1.5 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'ring-2 ring-inset ring-zinc-400' : ''}`}
+                  className={`bg-zinc-900 min-h-[60px] sm:min-h-[90px] p-1 sm:p-1.5 cursor-pointer transition-colors hover:bg-zinc-800 ${isSelected ? 'ring-2 ring-inset ring-zinc-400' : ''}`}
                 >
                   <div className={`text-xs font-semibold mb-1 w-6 h-6 flex items-center justify-center rounded-full ${
                     isToday ? 'bg-white text-zinc-900' : dow === 0 ? 'text-red-400' : dow === 6 ? 'text-blue-400' : 'text-zinc-300'
@@ -187,7 +187,7 @@ export default function SchedulePage() {
         </div>
 
         {/* 사이드 패널 */}
-        <div className="w-72 flex-shrink-0 ml-5">
+        <div className="w-full lg:w-72 lg:flex-shrink-0 lg:ml-5 mt-4 lg:mt-0">
           <div className="sticky top-20 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
             <div className="px-4 py-3 border-b border-zinc-700 flex items-center justify-between">
               <h3 className="font-semibold text-white text-sm">
@@ -205,7 +205,7 @@ export default function SchedulePage() {
               )}
             </div>
 
-            <div className="p-3 flex flex-col gap-2 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className="p-3 flex flex-col gap-2 max-h-64 lg:max-h-[calc(100vh-200px)] overflow-y-auto">
               {!selectedDate && (
                 <p className="text-xs text-zinc-500 text-center py-6">날짜를 클릭하세요</p>
               )}

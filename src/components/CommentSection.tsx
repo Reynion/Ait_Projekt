@@ -34,7 +34,7 @@ function renderContent(content: string) {
 
 function Avatar({ url, nickname }: { url: string | null; nickname: string }) {
   return (
-    <div className="relative w-9 h-9 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+    <div className="relative w-8 h-8 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
       {url ? (
         <Image src={url} alt={nickname} fill className="object-cover" unoptimized />
       ) : (
@@ -120,7 +120,7 @@ export default function CommentSection({ postId, currentUserId }: Props) {
           <li key={comment.id} className="flex flex-col gap-2">
             <div className="flex gap-3">
               <Avatar url={comment.users?.avatar_url ?? null} nickname={comment.users?.nickname ?? ''} />
-              <div className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3">
+              <div className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="text-sm font-semibold text-zinc-100">{comment.users?.nickname ?? '알 수 없음'}</span>
                   <span className="text-xs text-zinc-500">{new Date(comment.created_at).toLocaleDateString('ko-KR')}</span>
@@ -146,11 +146,11 @@ export default function CommentSection({ postId, currentUserId }: Props) {
             </div>
 
             {replies(comment.id).length > 0 && (
-              <ul className="ml-10 flex flex-col gap-2">
+              <ul className="ml-6 sm:ml-10 flex flex-col gap-2">
                 {replies(comment.id).map((reply) => (
                   <li key={reply.id} className="flex gap-3">
                     <Avatar url={reply.users?.avatar_url ?? null} nickname={reply.users?.nickname ?? ''} />
-                    <div className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3">
+                    <div className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-2.5">
                       <div className="flex items-center gap-2 mb-1.5">
                         <span className="text-sm font-semibold text-zinc-100">{reply.users?.nickname ?? '알 수 없음'}</span>
                         <span className="text-xs text-zinc-500">{new Date(reply.created_at).toLocaleDateString('ko-KR')}</span>

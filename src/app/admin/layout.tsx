@@ -1,13 +1,23 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
+const ADMIN_MENUS = [
+  { href: '/admin', label: '대시보드' },
+  { href: '/admin/accounts', label: '계정 관리' },
+  { href: '/admin/posts', label: '음악제안 관리' },
+  { href: '/admin/board', label: '게시글 관리' },
+  { href: '/admin/polls', label: '투표 관리' },
+]
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const pathname = usePathname()
   const [checking, setChecking] = useState(true)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -19,6 +29,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     })
   }, [router])
 
+  useEffect(() => { setMenuOpen(false) }, [pathname])
+
   if (checking) return (
     <main className="flex min-h-screen items-center justify-center">
       <p className="text-zinc-400">확인 중...</p>
@@ -27,20 +39,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="flex items-center justify-between px-6 py-3 bg-zinc-900 border-b border-zinc-700">
-        <span className="text-sm font-semibold text-zinc-300">🛠 관리자 페이지</span>
+      <header className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-700">
+        <div className="flex items-center gap-3">
+          {/* 모바일 햄버거 */}
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="md:hidden p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+            aria-label="메뉴"
+          >
+            {menuOpen ? (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+              </svg>
+            )}
+          </button>
+          <span className="text-sm font-semibold text-zinc-300">🛠 관리자 페이지</span>
+        </div>
         <Link href="/" className="text-sm text-zinc-400 hover:text-white transition-colors">← 메인으로</Link>
       </header>
+
+      {/* 모바일 드롭다운 */}
+      {menuOpen && (
+        <nav className="md:hidden bg-zinc-900 border-b border-zinc-700 px-4 py-3 flex flex-col gap-1">
+          {ADMIN_MENUS.map(m => (
+            <Link key={m.href} href={m.href} className="text-sm text-zinc-300 hover:text-white px-3 py-2.5 rounded-lg hover:bg-zinc-800 transition-colors">
+              {m.label}
+            </Link>
+          ))}
+        </nav>
+      )}
+
       <div className="flex flex-1">
-        <aside className="w-48 bg-zinc-900 border-r border-zinc-700 flex flex-col gap-1 p-4">
+        {/* 데스크톱 사이드바 */}
+        <aside className="hidden md:flex w-48 bg-zinc-900 border-r border-zinc-700 flex-col gap-1 p-4">
           <p className="text-xs text-zinc-500 font-semibold uppercase mb-3">메뉴</p>
-          <Link href="/admin" className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">대시보드</Link>
-          <Link href="/admin/accounts" className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">계정 관리</Link>
-          <Link href="/admin/posts" className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">음악제안 관리</Link>
-          <Link href="/admin/board" className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">게시글 관리</Link>
-          <Link href="/admin/polls" className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">투표 관리</Link>
+          {ADMIN_MENUS.map(m => (
+            <Link key={m.href} href={m.href} className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">
+              {m.label}
+            </Link>
+          ))}
         </aside>
-        <main className="flex-1 p-8 bg-zinc-950 text-white">
+
+        <main className="flex-1 p-4 md:p-8 bg-zinc-950 text-white">
           {children}
         </main>
       </div>
