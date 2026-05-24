@@ -130,7 +130,7 @@ export default function PostList() {
           <select
             value={searchType}
             onChange={e => { setSearchType(e.target.value as SearchType); setSearch('') }}
-            className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+            className="bg-zinc-900 border border-zinc-600 rounded-lg px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
           >
             <option value="title">곡 제목</option>
             <option value="artist">아티스트</option>
@@ -140,27 +140,29 @@ export default function PostList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && applySearch()}
-            placeholder={searchType === 'title' ? '곡 제목 검색...' : '아티스트 검색...'}
-            className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+            placeholder={searchType === 'title' ? '곡 제목...' : '아티스트...'}
+            className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
           />
+          <button
+            onClick={applySearch}
+            className="bg-zinc-700 border border-zinc-600 text-zinc-200 text-sm px-3 py-2 rounded-lg hover:bg-zinc-600 hover:text-white transition-colors flex-shrink-0"
+          >
+            검색
+          </button>
+        </div>
+        <div className="flex gap-2">
           <select
             value={selectedMember}
             onChange={e => { setSelectedMember(e.target.value); setCurrentPage(1) }}
-            className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+            className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
           >
             <option value="all">전체 멤버</option>
             {members.map(m => (
               <option key={m} value={m}>{m}</option>
             ))}
           </select>
-          <button
-            onClick={applySearch}
-            className="bg-zinc-700 border border-zinc-600 text-zinc-200 text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:text-white transition-colors flex-shrink-0"
-          >
-            검색
-          </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-zinc-400 flex-shrink-0">날짜</span>
           <input
             type="date"
@@ -230,11 +232,11 @@ export default function PostList() {
             >
               <span className="text-sm text-zinc-500 font-mono w-7 flex-shrink-0 pt-1 text-right">{seq}</span>
               {thumbnail ? (
-                <div className="relative w-36 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
+                <div className="relative w-24 h-16 sm:w-36 sm:h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
                   <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="w-36 h-24 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-3xl">🎵</div>
+                <div className="w-24 h-16 sm:w-36 sm:h-24 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-2xl sm:text-3xl">🎵</div>
               )}
               <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                 <h3 className="font-semibold text-lg text-white truncate">{post.title}</h3>

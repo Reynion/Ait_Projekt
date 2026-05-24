@@ -117,7 +117,7 @@ export default function BoardPage() {
             <select
               value={searchType}
               onChange={e => { setSearchType(e.target.value as SearchType); setSearch('') }}
-              className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+              className="bg-zinc-900 border border-zinc-600 rounded-lg px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400 flex-shrink-0"
             >
               <option value="title">제목</option>
               <option value="content">내용</option>
@@ -127,8 +127,8 @@ export default function BoardPage() {
               value={search}
               onChange={e => setSearch(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && applySearch()}
-              placeholder={searchType === 'title' ? '제목 검색...' : '내용 검색...'}
-              className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+              placeholder={searchType === 'title' ? '제목...' : '내용...'}
+              className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
             />
             <button
               onClick={applySearch}

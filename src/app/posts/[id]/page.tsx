@@ -92,15 +92,15 @@ export default function PostDetailPage() {
 
         {/* 곡 정보 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold text-white">{post.title}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-col gap-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-white break-words">{post.title}</h1>
               {post.artist && (
                 <p className="text-sm text-zinc-400">{post.artist}</p>
               )}
             </div>
             {post.user_id === currentUserId && (
-              <div className="flex gap-2 flex-shrink-0 mt-1">
+              <div className="flex gap-2 flex-shrink-0">
                 <Link
                   href={`/posts/${post.id}/edit`}
                   className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors border border-zinc-700 hover:border-zinc-500 px-3 py-1 rounded-lg"

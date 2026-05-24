@@ -125,9 +125,9 @@ export default function PollDetailPage() {
 
         {/* 투표 정보 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{poll.title}</h1>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-white">{poll.title}</h1>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium border flex-shrink-0 ${
               poll.is_active
                 ? 'bg-green-500/10 border-green-500/40 text-green-400'
                 : 'bg-zinc-700 border-zinc-600 text-zinc-500'

@@ -94,7 +94,7 @@ export default function RecordDetailPage() {
         {/* 메타 정보 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-2xl font-bold text-white leading-tight">{post.title}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight min-w-0 break-words flex-1">{post.title}</h1>
             {post.record_type && (
               <span className={`text-xs px-2 py-1 rounded-full border flex-shrink-0 ${TYPE_STYLE[post.record_type]}`}>
                 {TYPE_LABEL[post.record_type]}
