@@ -39,45 +39,34 @@ export default function AdminAccounts() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-white">계정 관리</h1>
-      <div className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-zinc-700 text-zinc-400 text-left bg-zinc-900">
-              <th className="px-4 py-3 font-medium">닉네임</th>
-              <th className="px-4 py-3 font-medium">이메일</th>
-              <th className="px-4 py-3 font-medium">가입일</th>
-              <th className="px-4 py-3 font-medium">권한</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id} className="border-b border-zinc-700 last:border-0 hover:bg-zinc-700/50 transition-colors">
-                <td className="px-4 py-3 font-medium text-zinc-100">{user.nickname}</td>
-                <td className="px-4 py-3 text-zinc-400">{user.email}</td>
-                <td className="px-4 py-3 text-zinc-400">{new Date(user.created_at).toLocaleDateString('ko-KR')}</td>
-                <td className="px-4 py-3">
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                    user.role === 'admin'
-                      ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                      : 'bg-zinc-700 border-zinc-600 text-zinc-400'
-                  }`}>
-                    {user.role === 'admin' ? '관리자' : '멤버'}
-                  </span>
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    onClick={() => toggleRole(user)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
-                  >
-                    {user.role === 'admin' ? '멤버로 변경' : '관리자로 변경'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {users.length === 0 && <p className="text-center text-zinc-500 py-10">계정이 없습니다.</p>}
+      <div className="flex flex-col gap-3">
+        {users.length === 0 && (
+          <p className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">계정이 없습니다.</p>
+        )}
+        {users.map((user) => (
+          <div key={user.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-zinc-600 transition-colors">
+            <div className="flex flex-col gap-1 flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold text-zinc-100">{user.nickname}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                  user.role === 'admin'
+                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                    : 'bg-zinc-700 border-zinc-600 text-zinc-400'
+                }`}>
+                  {user.role === 'admin' ? '관리자' : '멤버'}
+                </span>
+              </div>
+              <span className="text-xs text-zinc-500 truncate">{user.email}</span>
+              <span className="text-xs text-zinc-500">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
+            </div>
+            <button
+              onClick={() => toggleRole(user)}
+              className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors flex-shrink-0 self-start sm:self-auto"
+            >
+              {user.role === 'admin' ? '멤버로 변경' : '관리자로 변경'}
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   )

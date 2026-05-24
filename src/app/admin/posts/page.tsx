@@ -83,33 +83,38 @@ export default function AdminPosts() {
         {posts.map((post) => (
           <div key={post.id} className="bg-zinc-800 rounded-xl overflow-hidden">
             {/* 게시글 행 */}
-            <div className="flex items-center gap-4 px-4 py-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 px-4 py-3">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{post.title}</p>
                 {post.description && (
-                  <p className="text-zinc-500 text-xs truncate max-w-md">{post.description}</p>
+                  <p className="text-zinc-500 text-xs truncate">{post.description}</p>
                 )}
+                <div className="flex gap-2 text-xs text-zinc-500 mt-0.5">
+                  <span className="text-zinc-400">{post.users?.nickname ?? '알 수 없음'}</span>
+                  <span>·</span>
+                  <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                </div>
               </div>
-              <span className="text-xs text-zinc-400 flex-shrink-0">{post.users?.nickname ?? '알 수 없음'}</span>
-              <span className="text-xs text-zinc-500 flex-shrink-0">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-              <Link
-                href={`/admin/posts/${post.id}`}
-                className="text-xs px-3 py-1 rounded border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
-              >
-                보기
-              </Link>
-              <button
-                onClick={() => toggleComments(post.id)}
-                className="text-xs px-3 py-1 rounded border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-white transition-colors flex-shrink-0"
-              >
-                💬 댓글 {expanded === post.id ? '닫기' : '보기'}
-              </button>
-              <button
-                onClick={() => handleDeletePost(post.id)}
-                className="text-xs px-3 py-1 rounded border border-zinc-600 hover:border-red-500 text-zinc-400 hover:text-red-400 transition-colors flex-shrink-0"
-              >
-                삭제
-              </button>
+              <div className="flex gap-2 flex-shrink-0">
+                <Link
+                  href={`/admin/posts/${post.id}`}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-white transition-colors"
+                >
+                  보기
+                </Link>
+                <button
+                  onClick={() => toggleComments(post.id)}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-white transition-colors"
+                >
+                  💬 댓글 {expanded === post.id ? '닫기' : '보기'}
+                </button>
+                <button
+                  onClick={() => handleDeletePost(post.id)}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 hover:border-red-500/50 text-zinc-500 hover:text-red-400 transition-colors"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
 
             {/* 댓글 영역 */}

@@ -72,7 +72,7 @@ export default function AdminBoardPage() {
         )}
         {posts.map(post => (
           <div key={post.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
-            <div className="flex items-start justify-between gap-4 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 p-4">
               <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="font-semibold text-zinc-100 truncate">{post.title}</span>
                 <p className="text-xs text-zinc-500 line-clamp-1">{post.content}</p>
