@@ -1,12 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import Image from 'next/image'
 
 interface UserRow {
   id: string
   nickname: string
   email: string
+  phone: string | null
+  avatar_url: string | null
   role: string
   created_at: string
 }
@@ -15,16 +18,19 @@ export default function AdminAccounts() {
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editNickname, setEditNickname] = useState('')
+  const [editForm, setEditForm] = useState({ nickname: '', email: '', phone: '' })
+  const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function fetchUsers() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, nickname, email, role, created_at')
+      .select('id, nickname, email, phone, avatar_url, role, created_at')
       .order('created_at', { ascending: false })
-    if (data) setUsers(data)
+    if (data) setUsers(data as UserRow[])
     setLoading(false)
   }
 
@@ -39,23 +45,48 @@ export default function AdminAccounts() {
 
   function startEdit(user: UserRow) {
     setEditingId(user.id)
-    setEditNickname(user.nickname)
+    setEditForm({ nickname: user.nickname, email: user.email, phone: user.phone ?? '' })
+    setEditAvatarUrl(user.avatar_url)
   }
 
   function cancelEdit() {
     setEditingId(null)
-    setEditNickname('')
+    setEditForm({ nickname: '', email: '', phone: '' })
+    setEditAvatarUrl(null)
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>, userId: string) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()
+    const path = `avatars/${userId}.${ext}`
+    const { error } = await supabase.storage.from('profiles').upload(path, file, { upsert: true })
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('profiles').getPublicUrl(path)
+      setEditAvatarUrl(urlData.publicUrl)
+    }
+    setUploading(false)
   }
 
   async function handleSave(userId: string) {
-    if (!editNickname.trim()) return
+    if (!editForm.nickname.trim()) return
     setSaving(true)
     const supabase = createClient()
-    await supabase.from('users').update({ nickname: editNickname.trim() }).eq('id', userId)
-    setUsers(prev => prev.map(u => u.id === userId ? { ...u, nickname: editNickname.trim() } : u))
+    const updated = {
+      nickname: editForm.nickname.trim(),
+      email: editForm.email.trim(),
+      phone: editForm.phone.trim() || null,
+      avatar_url: editAvatarUrl,
+    }
+    await supabase.from('users').update(updated).eq('id', userId)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u))
     cancelEdit()
     setSaving(false)
   }
+
+  const inputClass = "bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
 
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
@@ -67,29 +98,19 @@ export default function AdminAccounts() {
           <p className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">계정이 없습니다.</p>
         )}
         {users.map((user) => (
-          <div key={user.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col gap-3 hover:border-zinc-600 transition-colors">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-              {/* 사용자 정보 */}
-              <div className="flex flex-col gap-1 flex-1 min-w-0">
-                {editingId === user.id ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editNickname}
-                      onChange={e => setEditNickname(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleSave(user.id); if (e.key === 'Escape') cancelEdit() }}
-                      className="bg-zinc-900 border border-zinc-500 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-zinc-300 w-40"
-                      autoFocus
-                    />
-                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                      user.role === 'admin'
-                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                        : 'bg-zinc-700 border-zinc-600 text-zinc-400'
-                    }`}>
-                      {user.role === 'admin' ? '관리자' : '멤버'}
-                    </span>
-                  </div>
-                ) : (
+          <div key={user.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden hover:border-zinc-600 transition-colors">
+
+            {/* 기본 정보 행 */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="relative w-10 h-10 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+                  {user.avatar_url ? (
+                    <Image src={user.avatar_url} alt={user.nickname} fill className="object-cover" unoptimized />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-zinc-400 text-lg">👤</div>
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-zinc-100">{user.nickname}</span>
                     <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
@@ -100,37 +121,22 @@ export default function AdminAccounts() {
                       {user.role === 'admin' ? '관리자' : '멤버'}
                     </span>
                   </div>
-                )}
-                <span className="text-xs text-zinc-500 truncate">{user.email}</span>
-                <span className="text-xs text-zinc-500">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span className="text-xs text-zinc-500 truncate">{user.email}</span>
+                  {user.phone && <span className="text-xs text-zinc-500">{user.phone}</span>}
+                  <span className="text-xs text-zinc-600">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
+                </div>
               </div>
-
-              {/* 버튼 그룹 */}
-              <div className="flex gap-2 flex-shrink-0 flex-wrap">
-                {editingId === user.id ? (
-                  <>
-                    <button
-                      onClick={() => handleSave(user.id)}
-                      disabled={saving || !editNickname.trim()}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-zinc-400 bg-zinc-700 hover:bg-zinc-600 text-white transition-colors disabled:opacity-50"
-                    >
-                      {saving ? '저장 중...' : '저장'}
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors"
-                    >
-                      취소
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => startEdit(user)}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
-                  >
-                    닉네임 수정
-                  </button>
-                )}
+              <div className="flex gap-2 flex-shrink-0">
+                <button
+                  onClick={() => editingId === user.id ? cancelEdit() : startEdit(user)}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                    editingId === user.id
+                      ? 'border-zinc-500 text-zinc-300 hover:border-zinc-400'
+                      : 'border-zinc-600 text-zinc-400 hover:border-zinc-400 hover:text-zinc-200'
+                  }`}
+                >
+                  {editingId === user.id ? '닫기' : '수정'}
+                </button>
                 <button
                   onClick={() => toggleRole(user)}
                   className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
@@ -139,6 +145,90 @@ export default function AdminAccounts() {
                 </button>
               </div>
             </div>
+
+            {/* 편집 폼 */}
+            {editingId === user.id && (
+              <div className="border-t border-zinc-700 bg-zinc-900 p-4 flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row gap-5">
+                  {/* 아바타 */}
+                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                    <div
+                      className="relative w-20 h-20 rounded-full overflow-hidden bg-zinc-700 border-2 border-zinc-600 cursor-pointer hover:border-zinc-400 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {editAvatarUrl ? (
+                        <Image src={editAvatarUrl} alt="" fill className="object-cover" unoptimized />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl text-zinc-500">👤</div>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-600 hover:border-zinc-400 px-2 py-1 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {uploading ? '업로드 중...' : '이미지 변경'}
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => handleAvatarChange(e, user.id)}
+                    />
+                  </div>
+
+                  {/* 텍스트 필드 */}
+                  <div className="flex flex-col gap-3 flex-1 min-w-0">
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-zinc-400 font-medium">닉네임 *</label>
+                      <input
+                        type="text"
+                        value={editForm.nickname}
+                        onChange={e => setEditForm(f => ({ ...f, nickname: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-zinc-400 font-medium">이메일</label>
+                      <input
+                        type="email"
+                        value={editForm.email}
+                        onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-zinc-400 font-medium">전화번호</label>
+                      <input
+                        type="tel"
+                        value={editForm.phone}
+                        onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
+                        placeholder="010-0000-0000"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={cancelEdit}
+                    className="text-xs px-4 py-2 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => handleSave(user.id)}
+                    disabled={saving || !editForm.nickname.trim() || uploading}
+                    className="text-xs px-4 py-2 rounded-lg bg-zinc-100 text-zinc-900 font-semibold hover:bg-white disabled:opacity-50 transition-colors"
+                  >
+                    {saving ? '저장 중...' : '저장'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
