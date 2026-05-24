@@ -10,6 +10,7 @@ interface BoardPost {
   id: number
   title: string
   content: string
+  image_urls: string[] | null
   created_at: string
   user_id: string
   users: { nickname: string; avatar_url: string | null } | null
@@ -196,7 +197,12 @@ export default function BoardPage() {
                       <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
                       <span>·</span>
                       <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                      <span className="ml-auto">💬 {post.commentCount}</span>
+                      <div className="ml-auto flex items-center gap-2">
+                        {post.image_urls && post.image_urls.length > 0 && (
+                          <span>🖼 {post.image_urls.length}</span>
+                        )}
+                        <span>💬 {post.commentCount}</span>
+                      </div>
                     </div>
                   </div>
                 </Link>

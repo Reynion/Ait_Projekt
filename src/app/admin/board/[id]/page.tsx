@@ -10,6 +10,7 @@ interface BoardPost {
   id: number
   title: string
   content: string
+  image_urls: string[] | null
   created_at: string
   users: { nickname: string; avatar_url: string | null } | null
 }
@@ -101,6 +102,16 @@ export default function AdminBoardDetailPage() {
         </div>
 
         <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+
+          {post.image_urls && post.image_urls.length > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-zinc-700">
+              {post.image_urls.map((url, idx) => (
+                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-zinc-600 hover:border-zinc-400 transition-colors">
+                  <Image src={url} alt="" fill className="object-cover" unoptimized />
+                </a>
+              ))}
+            </div>
+          )}
       </div>
 
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
