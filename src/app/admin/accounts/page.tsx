@@ -14,6 +14,9 @@ interface UserRow {
 export default function AdminAccounts() {
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editNickname, setEditNickname] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function fetchUsers() {
     const supabase = createClient()
@@ -34,6 +37,26 @@ export default function AdminAccounts() {
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
   }
 
+  function startEdit(user: UserRow) {
+    setEditingId(user.id)
+    setEditNickname(user.nickname)
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+    setEditNickname('')
+  }
+
+  async function handleSave(userId: string) {
+    if (!editNickname.trim()) return
+    setSaving(true)
+    const supabase = createClient()
+    await supabase.from('users').update({ nickname: editNickname.trim() }).eq('id', userId)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, nickname: editNickname.trim() } : u))
+    cancelEdit()
+    setSaving(false)
+  }
+
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
   return (
@@ -44,27 +67,78 @@ export default function AdminAccounts() {
           <p className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">계정이 없습니다.</p>
         )}
         {users.map((user) => (
-          <div key={user.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-zinc-600 transition-colors">
-            <div className="flex flex-col gap-1 flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-zinc-100">{user.nickname}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                  user.role === 'admin'
-                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                    : 'bg-zinc-700 border-zinc-600 text-zinc-400'
-                }`}>
-                  {user.role === 'admin' ? '관리자' : '멤버'}
-                </span>
+          <div key={user.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col gap-3 hover:border-zinc-600 transition-colors">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* 사용자 정보 */}
+              <div className="flex flex-col gap-1 flex-1 min-w-0">
+                {editingId === user.id ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editNickname}
+                      onChange={e => setEditNickname(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') handleSave(user.id); if (e.key === 'Escape') cancelEdit() }}
+                      className="bg-zinc-900 border border-zinc-500 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-zinc-300 w-40"
+                      autoFocus
+                    />
+                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                      user.role === 'admin'
+                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                        : 'bg-zinc-700 border-zinc-600 text-zinc-400'
+                    }`}>
+                      {user.role === 'admin' ? '관리자' : '멤버'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-zinc-100">{user.nickname}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                      user.role === 'admin'
+                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                        : 'bg-zinc-700 border-zinc-600 text-zinc-400'
+                    }`}>
+                      {user.role === 'admin' ? '관리자' : '멤버'}
+                    </span>
+                  </div>
+                )}
+                <span className="text-xs text-zinc-500 truncate">{user.email}</span>
+                <span className="text-xs text-zinc-500">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
               </div>
-              <span className="text-xs text-zinc-500 truncate">{user.email}</span>
-              <span className="text-xs text-zinc-500">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
+
+              {/* 버튼 그룹 */}
+              <div className="flex gap-2 flex-shrink-0 flex-wrap">
+                {editingId === user.id ? (
+                  <>
+                    <button
+                      onClick={() => handleSave(user.id)}
+                      disabled={saving || !editNickname.trim()}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-zinc-400 bg-zinc-700 hover:bg-zinc-600 text-white transition-colors disabled:opacity-50"
+                    >
+                      {saving ? '저장 중...' : '저장'}
+                    </button>
+                    <button
+                      onClick={cancelEdit}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors"
+                    >
+                      취소
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => startEdit(user)}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                  >
+                    닉네임 수정
+                  </button>
+                )}
+                <button
+                  onClick={() => toggleRole(user)}
+                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                >
+                  {user.role === 'admin' ? '멤버로 변경' : '관리자로 변경'}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={() => toggleRole(user)}
-              className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors flex-shrink-0 self-start sm:self-auto"
-            >
-              {user.role === 'admin' ? '멤버로 변경' : '관리자로 변경'}
-            </button>
           </div>
         ))}
       </div>

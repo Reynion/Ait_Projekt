@@ -8,6 +8,7 @@ interface BoardPost {
   id: number
   title: string
   content: string
+  image_urls: string[] | null
   created_at: string
   users: { nickname: string } | null
 }
@@ -76,12 +77,15 @@ export default function AdminBoardPage() {
               <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <span className="font-semibold text-zinc-100 truncate">{post.title}</span>
                 <p className="text-xs text-zinc-500 line-clamp-1">{post.content}</p>
-                <div className="flex gap-2 text-xs text-zinc-500 mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
                   <span className="text-zinc-400">{post.users?.nickname ?? '알 수 없음'}</span>
                   <span>·</span>
                   <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
                   <span>·</span>
-                  <span>댓글 {comments.filter(c => c.board_post_id === post.id).length}개</span>
+                  <span>💬 {comments.filter(c => c.board_post_id === post.id).length}</span>
+                  {post.image_urls && post.image_urls.length > 0 && (
+                    <span>· 🖼 {post.image_urls.length}</span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
