@@ -77,7 +77,7 @@ export default function SignupPage() {
     })
 
     if (signUpError || !authData.user) {
-      setError('가입에 실패했습니다. 다시 시도해주세요.')
+      setError(signUpError?.message.includes('already registered') ? '이미 사용 중인 이메일입니다.' : '가입에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
     }
