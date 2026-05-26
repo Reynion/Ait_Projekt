@@ -100,24 +100,8 @@ export default function RecordDetailPage() {
       <Navbar />
       <section className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* 헤더 */}
-        <div className="flex items-center justify-between">
+        <div>
           <Link href="/records" className="text-zinc-400 hover:text-white transition-colors text-sm">← 목록</Link>
-          <div className="flex gap-3">
-            {isAdmin && (
-              <button
-                onClick={toggleNotice}
-                className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-400 border-amber-600 hover:border-amber-400' : 'text-zinc-400 border-zinc-700 hover:text-amber-400 hover:border-amber-600'}`}
-              >
-                {post.is_notice ? '공지 해제' : '공지 설정'}
-              </button>
-            )}
-            {canEdit && (
-              <>
-                <Link href={`/records/${id}/edit`} className="text-sm text-zinc-400 hover:text-white transition-colors">수정</Link>
-                <button onClick={handleDelete} className="text-sm text-zinc-400 hover:text-red-400 transition-colors">삭제</button>
-              </>
-            )}
-          </div>
         </div>
 
         {/* 메타 정보 */}
@@ -129,11 +113,27 @@ export default function RecordDetailPage() {
               )}
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight min-w-0 break-words">{post.title}</h1>
             </div>
-            {post.record_type && (
-              <span className={`text-xs px-2 py-1 rounded-full border flex-shrink-0 ${TYPE_STYLE[post.record_type]}`}>
-                {TYPE_LABEL[post.record_type]}
-              </span>
-            )}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {post.record_type && (
+                <span className={`text-xs px-2 py-1 rounded-full border ${TYPE_STYLE[post.record_type]}`}>
+                  {TYPE_LABEL[post.record_type]}
+                </span>
+              )}
+              {isAdmin && (
+                <button
+                  onClick={toggleNotice}
+                  className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-400 border-amber-600 hover:border-amber-400' : 'text-zinc-500 border-zinc-700 hover:text-amber-400 hover:border-amber-600'}`}
+                >
+                  {post.is_notice ? '공지 해제' : '공지 설정'}
+                </button>
+              )}
+              {canEdit && (
+                <>
+                  <Link href={`/records/${id}/edit`} className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors border border-zinc-700 hover:border-zinc-500 px-3 py-1 rounded-lg">수정</Link>
+                  <button onClick={handleDelete} className="text-sm text-zinc-500 hover:text-red-400 transition-colors border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg">삭제</button>
+                </>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-3 text-sm text-zinc-400 border-t border-zinc-700 pt-3">
             <span>📅 {new Date(post.record_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
