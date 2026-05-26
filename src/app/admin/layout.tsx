@@ -8,6 +8,7 @@ import Link from 'next/link'
 const ADMIN_MENUS = [
   { href: '/admin', label: '대시보드' },
   { href: '/admin/accounts', label: '계정 관리' },
+  { href: '/admin/invite-codes', label: '초대 코드' },
   { href: '/admin/posts', label: '음악제안 관리' },
   { href: '/admin/board', label: '게시글 관리' },
   { href: '/admin/polls', label: '투표 관리' },
