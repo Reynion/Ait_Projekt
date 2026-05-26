@@ -99,10 +99,21 @@ export default function EditPollPage() {
       is_active: form.is_active,
     }).eq('id', id)
 
-    await supabase.from('poll_candidates').delete().eq('poll_id', id)
-    await supabase.from('poll_candidates').insert(
-      selectedPostIds.map(postId => ({ poll_id: Number(id), post_id: postId }))
-    )
+    const { data: existingCandidates } = await supabase
+      .from('poll_candidates')
+      .select('id, post_id')
+      .eq('poll_id', id)
+
+    const existingPostIds = (existingCandidates ?? []).map(c => c.post_id)
+    const toAdd = selectedPostIds.filter(pid => !existingPostIds.includes(pid))
+    const toRemove = (existingCandidates ?? []).filter(c => !selectedPostIds.includes(c.post_id))
+
+    if (toRemove.length > 0) {
+      await supabase.from('poll_candidates').delete().in('id', toRemove.map(c => c.id))
+    }
+    if (toAdd.length > 0) {
+      await supabase.from('poll_candidates').insert(toAdd.map(postId => ({ poll_id: Number(id), post_id: postId })))
+    }
 
     router.push('/admin/polls')
   }
