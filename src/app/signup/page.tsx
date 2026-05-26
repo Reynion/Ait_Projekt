@@ -91,6 +91,11 @@ export default function SignupPage() {
     })
 
     if (insertError) {
+      await fetch('/api/auth/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: authData.user.id }),
+      })
       setError('계정 생성에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return

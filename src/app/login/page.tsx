@@ -67,7 +67,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="text-center text-sm text-zinc-500 mt-4">
-          계정이 없으신가요?{' '}
+          우리 밴드는 처음이니?{' '}
           <Link href="/signup" className="text-zinc-700 dark:text-zinc-300 hover:underline transition-colors">회원가입</Link>
         </p>
       </div>
