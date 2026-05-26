@@ -22,8 +22,8 @@ type SearchType = 'title' | 'artist'
 
 const PAGE_SIZE = 20
 
-function Avatar({ url, nickname, size = 8 }: { url: string | null; nickname: string; size?: number }) {
-  const sizeClass = `w-${size} h-${size}`
+function Avatar({ url, nickname, size = 8 }: { url: string | null; nickname: string; size?: 6 | 8 }) {
+  const sizeClass = size === 6 ? 'w-6 h-6' : 'w-8 h-8'
   return (
     <div className={`relative ${sizeClass} rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0`}>
       {url ? (

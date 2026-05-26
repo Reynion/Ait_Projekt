@@ -51,18 +51,18 @@ export default function CommentSection({ postId, currentUserId }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  async function fetchComments() {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('comments')
+      .select('*, users(nickname, avatar_url)')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true })
+    if (data) setComments(data as unknown as Comment[])
+  }
+
   useEffect(() => {
     const supabase = createClient()
-
-    async function fetchComments() {
-      const { data } = await supabase
-        .from('comments')
-        .select('*, users(nickname, avatar_url)')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: true })
-      if (data) setComments(data as unknown as Comment[])
-    }
-
     fetchComments()
     const channel = supabase
       .channel(`comments-${postId}`)
@@ -101,6 +101,7 @@ export default function CommentSection({ postId, currentUserId }: Props) {
     setContent('')
     setReplyTarget(null)
     setSubmitting(false)
+    fetchComments()
   }
 
   async function handleDelete(commentId: number) {
