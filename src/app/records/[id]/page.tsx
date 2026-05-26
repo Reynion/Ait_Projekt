@@ -107,14 +107,14 @@ export default function RecordDetailPage() {
 
         {/* 메타 정보 */}
         <div className={`border rounded-xl p-5 flex flex-col gap-3 ${post.is_notice ? 'bg-amber-950/20 border-amber-700/40' : 'bg-zinc-800 border-zinc-700'}`}>
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {post.is_notice && (
                 <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
               )}
               <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight min-w-0 break-words">{post.title}</h1>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-shrink-0">
               {post.record_type && (
                 <span className={`text-xs px-2 py-1 rounded-full border ${TYPE_STYLE[post.record_type]}`}>
                   {TYPE_LABEL[post.record_type]}

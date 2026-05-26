@@ -104,7 +104,7 @@ export default function PostDetailPage() {
 
         {/* 곡 정보 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-3">
-          <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div className="flex flex-col gap-1 min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-white break-words">{post.title}</h1>
               {post.artist && (
