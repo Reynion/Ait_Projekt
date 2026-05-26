@@ -9,6 +9,8 @@ export default function ConfirmPage() {
   const supabase = createClient()
 
   const [ready, setReady] = useState(false)
+  const [isInvite, setIsInvite] = useState(false)
+  const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
@@ -19,12 +21,13 @@ export default function ConfirmPage() {
     const params = new URLSearchParams(hash.replace('#', '?'))
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')
+    const type = params.get('type')
 
     if (accessToken && refreshToken) {
+      if (type === 'invite') setIsInvite(true)
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
         .then(() => setReady(true))
     } else {
-      // 이미 세션이 있는 경우 (재접근 등)
       supabase.auth.getSession().then(({ data }) => {
         if (data.session) setReady(true)
         else router.push('/login')
@@ -35,6 +38,11 @@ export default function ConfirmPage() {
   async function handleSetPassword(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (isInvite && !nickname.trim()) {
+      setError('닉네임을 입력해주세요.')
+      return
+    }
 
     if (password !== confirm) {
       setError('비밀번호가 일치하지 않습니다.')
@@ -47,17 +55,26 @@ export default function ConfirmPage() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error: updateError } = await supabase.auth.updateUser({ password })
 
-    if (error) {
+    if (updateError) {
       setError('비밀번호 설정에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
     }
 
+    if (isInvite) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('users').update({ nickname: nickname.trim() }).eq('id', user.id)
+      }
+    }
+
     router.push('/')
     router.refresh()
   }
+
+  const inputClass = "border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600 w-full"
 
   if (!ready) {
     return (
@@ -70,9 +87,26 @@ export default function ConfirmPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
       <div className="w-full max-w-sm bg-white dark:bg-zinc-800 rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-2">비밀번호 설정</h1>
-        <p className="text-sm text-zinc-500 text-center mb-6">처음 로그인하셨습니다. 사용할 비밀번호를 설정해주세요.</p>
+        <h1 className="text-2xl font-bold text-center mb-2">
+          {isInvite ? '초대 수락' : '비밀번호 설정'}
+        </h1>
+        <p className="text-sm text-zinc-500 text-center mb-6">
+          {isInvite ? '닉네임과 비밀번호를 설정해주세요.' : '처음 로그인하셨습니다. 사용할 비밀번호를 설정해주세요.'}
+        </p>
         <form onSubmit={handleSetPassword} className="flex flex-col gap-4">
+          {isInvite && (
+            <div className="flex flex-col gap-1">
+              <label className="text-sm font-medium">닉네임</label>
+              <input
+                type="text"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                required
+                className={inputClass}
+                placeholder="사용할 닉네임"
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">새 비밀번호</label>
             <input
@@ -80,7 +114,7 @@ export default function ConfirmPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600"
+              className={inputClass}
               placeholder="8자 이상, 영문+숫자 포함"
             />
           </div>
@@ -91,7 +125,7 @@ export default function ConfirmPage() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600"
+              className={inputClass}
               placeholder="비밀번호 재입력"
             />
           </div>
@@ -101,7 +135,7 @@ export default function ConfirmPage() {
             disabled={loading}
             className="bg-zinc-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
           >
-            {loading ? '설정 중...' : '비밀번호 설정'}
+            {loading ? '설정 중...' : (isInvite ? '완료' : '비밀번호 설정')}
           </button>
         </form>
       </div>

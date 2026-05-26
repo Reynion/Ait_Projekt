@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
+
 export default function SignupPage() {
   const [form, setForm] = useState({ email: '', password: '', passwordConfirm: '', nickname: '', inviteCode: '' })
   const [error, setError] = useState('')
@@ -69,27 +70,15 @@ export default function SignupPage() {
       return
     }
 
-    // 4. Auth 계정 생성 (이메일 확인 메일 발송)
-    const { data: authData, error: signUpError } = await supabase.auth.signUp({
+    // 4. Auth 계정 생성 (트리거가 users row 자동 생성)
+    const { error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
+      options: { data: { nickname: form.nickname.trim() } },
     })
 
-    if (signUpError || !authData.user) {
-      setError(signUpError?.message.includes('already registered') ? '이미 사용 중인 이메일입니다.' : '가입에 실패했습니다. 다시 시도해주세요.')
-      setLoading(false)
-      return
-    }
-
-    // 5. users 테이블 row 생성 (service role API 경유)
-    const res = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: authData.user.id, email: form.email, nickname: form.nickname.trim() }),
-    })
-
-    if (!res.ok) {
-      setError('계정 생성에 실패했습니다. 다시 시도해주세요.')
+    if (signUpError) {
+      setError(signUpError.message.includes('already registered') ? '이미 사용 중인 이메일입니다.' : '가입에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
     }
