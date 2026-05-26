@@ -82,7 +82,7 @@ export default function BoardPage() {
 
   const filtered = posts.filter(post => {
     const target = appliedSearchType === 'title' ? post.title : post.content
-    const matchSearch = !appliedSearch || target.toLowerCase().includes(appliedSearch.toLowerCase())
+    const matchSearch = !appliedSearch || target.replace(/\s/g, '').toLowerCase().includes(appliedSearch.replace(/\s/g, '').toLowerCase())
     const postDate = new Date(post.created_at)
     const matchFrom = !appliedDateFrom || postDate >= new Date(appliedDateFrom)
     const matchTo = !appliedDateTo || postDate <= new Date(appliedDateTo + 'T23:59:59')

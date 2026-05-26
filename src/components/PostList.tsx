@@ -106,7 +106,7 @@ export default function PostList() {
   const filtered = posts
     .filter(post => {
       const target = appliedSearchType === 'title' ? post.title : (post.artist ?? '')
-      const matchSearch = !appliedSearch || target.toLowerCase().includes(appliedSearch.toLowerCase())
+      const matchSearch = !appliedSearch || target.replace(/\s/g, '').toLowerCase().includes(appliedSearch.replace(/\s/g, '').toLowerCase())
       const matchMember = selectedMember === 'all' || post.users?.nickname === selectedMember
       const postDate = new Date(post.created_at)
       const matchFrom = !appliedDateFrom || postDate >= new Date(appliedDateFrom)
