@@ -41,8 +41,8 @@ export default function ConfirmPage() {
       return
     }
 
-    if (password.length < 8) {
-      setError('비밀번호는 8자 이상이어야 합니다.')
+    if (password.length < 8 || !/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('비밀번호는 8자 이상이며 영문과 숫자를 포함해야 합니다.')
       return
     }
 
@@ -81,7 +81,7 @@ export default function ConfirmPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600"
-              placeholder="8자 이상"
+              placeholder="8자 이상, 영문+숫자 포함"
             />
           </div>
           <div className="flex flex-col gap-1">
