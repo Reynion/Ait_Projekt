@@ -19,6 +19,7 @@ interface RecordPost {
   setlist: string | null
   youtube_url: string | null
   image_urls: string[]
+  is_notice: boolean
   created_at: string
   created_by: string
   users: { nickname: string; avatar_url: string | null } | null
@@ -66,6 +67,13 @@ export default function RecordDetailPage() {
     router.push('/records')
   }
 
+  async function toggleNotice() {
+    if (!post || !isAdmin) return
+    const supabase = createClient()
+    const { error } = await supabase.from('record_posts').update({ is_notice: !post.is_notice }).eq('id', id)
+    if (!error) setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+  }
+
   if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950">
       <p className="text-zinc-400">불러오는 중...</p>
@@ -83,18 +91,33 @@ export default function RecordDetailPage() {
         {/* 헤더 */}
         <div className="flex items-center justify-between">
           <Link href="/records" className="text-zinc-400 hover:text-white transition-colors text-sm">← 목록</Link>
-          {canEdit && (
-            <div className="flex gap-3">
-              <Link href={`/records/${id}/edit`} className="text-sm text-zinc-400 hover:text-white transition-colors">수정</Link>
-              <button onClick={handleDelete} className="text-sm text-zinc-400 hover:text-red-400 transition-colors">삭제</button>
-            </div>
-          )}
+          <div className="flex gap-3">
+            {isAdmin && (
+              <button
+                onClick={toggleNotice}
+                className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-400 border-amber-600 hover:border-amber-400' : 'text-zinc-400 border-zinc-700 hover:text-amber-400 hover:border-amber-600'}`}
+              >
+                {post.is_notice ? '공지 해제' : '공지 설정'}
+              </button>
+            )}
+            {canEdit && (
+              <>
+                <Link href={`/records/${id}/edit`} className="text-sm text-zinc-400 hover:text-white transition-colors">수정</Link>
+                <button onClick={handleDelete} className="text-sm text-zinc-400 hover:text-red-400 transition-colors">삭제</button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* 메타 정보 */}
-        <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-3">
+        <div className={`border rounded-xl p-5 flex flex-col gap-3 ${post.is_notice ? 'bg-amber-950/20 border-amber-700/40' : 'bg-zinc-800 border-zinc-700'}`}>
           <div className="flex items-start justify-between gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight min-w-0 break-words flex-1">{post.title}</h1>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {post.is_notice && (
+                <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
+              )}
+              <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight min-w-0 break-words">{post.title}</h1>
+            </div>
             {post.record_type && (
               <span className={`text-xs px-2 py-1 rounded-full border flex-shrink-0 ${TYPE_STYLE[post.record_type]}`}>
                 {TYPE_LABEL[post.record_type]}

@@ -10,8 +10,10 @@ export default function NewBoardPostPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [isNotice, setIsNotice] = useState(false)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [previews, setPreviews] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -19,9 +21,11 @@ export default function NewBoardPostPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
+      const { data: row } = await supabase.from('users').select('role').eq('id', data.user.id).single()
+      if (row?.role === 'admin') setIsAdmin(true)
     })
   }, [router])
 
@@ -69,6 +73,7 @@ export default function NewBoardPostPage() {
       title,
       content,
       image_urls: imageUrls,
+      is_notice: isAdmin && isNotice,
     })
 
     if (error) {
@@ -114,6 +119,18 @@ export default function NewBoardPostPage() {
                 className={`${inputClass} resize-none`}
               />
             </div>
+
+            {isAdmin && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isNotice}
+                  onChange={e => setIsNotice(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500"
+                />
+                <span className="text-sm text-amber-400 font-medium">📌 공지로 등록</span>
+              </label>
+            )}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">

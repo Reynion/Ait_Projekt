@@ -13,6 +13,7 @@ export default function RecordEditPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isNotice, setIsNotice] = useState(false)
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
   const [newImageFiles, setNewImageFiles] = useState<File[]>([])
   const [newPreviews, setNewPreviews] = useState<string[]>([])
@@ -51,6 +52,7 @@ export default function RecordEditPage() {
         setlist: post.setlist ?? '',
         youtube_url: post.youtube_url ?? '',
       })
+      setIsNotice(post.is_notice ?? false)
       setExistingImageUrls(post.image_urls ?? [])
       setFetching(false)
     })
@@ -96,6 +98,7 @@ export default function RecordEditPage() {
       setlist: form.setlist.trim() || null,
       youtube_url: form.youtube_url.trim() || null,
       image_urls: [...existingImageUrls, ...newUrls],
+      ...(isAdmin ? { is_notice: isNotice } : {}),
     }).eq('id', id)
 
     if (updateErr) { setError('수정에 실패했습니다.'); setLoading(false); return }
@@ -164,6 +167,18 @@ export default function RecordEditPage() {
               <label className="text-sm font-medium text-zinc-300">유튜브 링크</label>
               <input type="url" value={form.youtube_url} onChange={e => setForm(f => ({ ...f, youtube_url: e.target.value }))} className={inputClass} />
             </div>
+
+            {isAdmin && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isNotice}
+                  onChange={e => setIsNotice(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500"
+                />
+                <span className="text-sm text-amber-400 font-medium">📌 공지로 등록</span>
+              </label>
+            )}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">

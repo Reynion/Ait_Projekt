@@ -15,6 +15,7 @@ interface BoardPost {
   image_urls: string[] | null
   created_at: string
   user_id: string
+  is_notice: boolean
   users: { nickname: string; avatar_url: string | null } | null
 }
 
@@ -23,6 +24,7 @@ export default function BoardPostDetailPage() {
   const router = useRouter()
   const [post, setPost] = useState<BoardPost | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -31,6 +33,8 @@ export default function BoardPostDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setCurrentUserId(user.id)
+      const { data: row } = await supabase.from('users').select('role').eq('id', user.id).single()
+      if (row?.role === 'admin') setIsAdmin(true)
 
       const { data } = await supabase
         .from('board_posts')
@@ -52,6 +56,13 @@ export default function BoardPostDetailPage() {
     router.push('/board')
   }
 
+  async function toggleNotice() {
+    if (!post || !isAdmin) return
+    const supabase = createClient()
+    const { error } = await supabase.from('board_posts').update({ is_notice: !post.is_notice }).eq('id', post.id)
+    if (!error) setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+  }
+
   if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950">
       <p className="text-zinc-400">불러오는 중...</p>
@@ -70,25 +81,40 @@ export default function BoardPostDetailPage() {
         </div>
 
         {/* 게시글 */}
-        <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
+        <div className={`border rounded-xl p-5 flex flex-col gap-4 ${post.is_notice ? 'bg-amber-950/20 border-amber-700/40' : 'bg-zinc-800 border-zinc-700'}`}>
           <div className="flex items-start justify-between gap-4">
-            <h1 className="text-2xl font-bold text-white">{post.title}</h1>
-            {post.user_id === currentUserId && (
-              <div className="flex gap-2 flex-shrink-0 mt-1">
-                <Link
-                  href={`/board/${post.id}/edit`}
-                  className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors border border-zinc-700 hover:border-zinc-500 px-3 py-1 rounded-lg"
-                >
-                  수정
-                </Link>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              {post.is_notice && (
+                <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
+              )}
+              <h1 className="text-2xl font-bold text-white min-w-0 break-words">{post.title}</h1>
+            </div>
+            <div className="flex gap-2 flex-shrink-0 mt-1">
+              {isAdmin && (
                 <button
-                  onClick={handleDelete}
-                  className="text-sm text-zinc-500 hover:text-red-400 transition-colors border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg"
+                  onClick={toggleNotice}
+                  className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-400 border-amber-600 hover:border-amber-400' : 'text-zinc-500 border-zinc-700 hover:text-amber-400 hover:border-amber-600'}`}
                 >
-                  삭제
+                  {post.is_notice ? '공지 해제' : '공지 설정'}
                 </button>
-              </div>
-            )}
+              )}
+              {(post.user_id === currentUserId || isAdmin) && (
+                <>
+                  <Link
+                    href={`/board/${post.id}/edit`}
+                    className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors border border-zinc-700 hover:border-zinc-500 px-3 py-1 rounded-lg"
+                  >
+                    수정
+                  </Link>
+                  <button
+                    onClick={handleDelete}
+                    className="text-sm text-zinc-500 hover:text-red-400 transition-colors border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg"
+                  >
+                    삭제
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 pb-3 border-b border-zinc-700">

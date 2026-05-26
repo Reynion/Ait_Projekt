@@ -11,8 +11,10 @@ export default function EditBoardPostPage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [isNotice, setIsNotice] = useState(false)
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
   const [newImageFiles, setNewImageFiles] = useState<File[]>([])
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([])
@@ -26,6 +28,9 @@ export default function EditBoardPostPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setCurrentUserId(user.id)
+      const { data: row } = await supabase.from('users').select('role').eq('id', user.id).single()
+      const admin = row?.role === 'admin'
+      if (admin) setIsAdmin(true)
 
       const { data: post } = await supabase
         .from('board_posts')
@@ -34,10 +39,11 @@ export default function EditBoardPostPage() {
         .single()
 
       if (!post) { router.push('/board'); return }
-      if (post.user_id !== user.id) { router.push(`/board/${id}`); return }
+      if (post.user_id !== user.id && !admin) { router.push(`/board/${id}`); return }
 
       setTitle(post.title)
       setContent(post.content)
+      setIsNotice(post.is_notice ?? false)
       setExistingImageUrls(post.image_urls ?? [])
       setLoading(false)
     }
@@ -90,7 +96,7 @@ export default function EditBoardPostPage() {
 
     const { error } = await supabase
       .from('board_posts')
-      .update({ title, content, image_urls: [...existingImageUrls, ...uploadedUrls] })
+      .update({ title, content, image_urls: [...existingImageUrls, ...uploadedUrls], ...(isAdmin ? { is_notice: isNotice } : {}) })
       .eq('id', id)
 
     if (error) {
@@ -141,6 +147,18 @@ export default function EditBoardPostPage() {
                 className={`${inputClass} resize-none`}
               />
             </div>
+
+            {isAdmin && (
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isNotice}
+                  onChange={e => setIsNotice(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500"
+                />
+                <span className="text-sm text-amber-400 font-medium">📌 공지로 등록</span>
+              </label>
+            )}
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">

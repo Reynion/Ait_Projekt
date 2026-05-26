@@ -13,6 +13,7 @@ interface BoardPost {
   image_urls: string[] | null
   created_at: string
   user_id: string
+  is_notice: boolean
   users: { nickname: string; avatar_url: string | null } | null
   commentCount: number
 }
@@ -88,8 +89,10 @@ export default function BoardPage() {
     return matchSearch && matchFrom && matchTo
   })
 
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
-  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+  const notices = filtered.filter(p => p.is_notice)
+  const normals = filtered.filter(p => !p.is_notice)
+  const totalPages = Math.ceil(normals.length / PAGE_SIZE)
+  const paginated = normals.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
   if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -180,9 +183,47 @@ export default function BoardPage() {
           </div>
         )}
 
+        {/* 공지 */}
+        {notices.length > 0 && (
+          <ul className="flex flex-col gap-3 mb-2">
+            {notices.map(post => (
+              <li key={post.id}>
+                <Link
+                  href={`/board/${post.id}`}
+                  className="bg-amber-950/20 border border-amber-700/40 rounded-xl p-4 hover:border-amber-600/60 transition-all flex gap-3 items-start"
+                >
+                  <span className="text-sm text-amber-600 font-mono w-7 flex-shrink-0 pt-0.5 text-right">📌</span>
+                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
+                      <h3 className="font-semibold text-white truncate">{post.title}</h3>
+                    </div>
+                    <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
+                    <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-amber-800/40 mt-1">
+                      <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                      <span>·</span>
+                      <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                      <div className="ml-auto flex items-center gap-2">
+                        {post.image_urls && post.image_urls.length > 0 && (
+                          <span>🖼 {post.image_urls.length}</span>
+                        )}
+                        <span>💬 {post.commentCount}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {notices.length > 0 && normals.length > 0 && (
+          <div className="border-t border-zinc-700 my-3" />
+        )}
+
         <ul className="flex flex-col gap-3">
           {paginated.map((post, idx) => {
-            const seq = filtered.length - ((currentPage - 1) * PAGE_SIZE + idx)
+            const seq = normals.length - ((currentPage - 1) * PAGE_SIZE + idx)
             return (
               <li key={post.id}>
                 <Link
