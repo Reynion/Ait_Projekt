@@ -189,20 +189,22 @@ export default function RecordDetailPage() {
         )}
 
         {/* 이전/다음 */}
-        <div className="grid grid-cols-2 gap-3">
-          {prevPost ? (
-            <Link href={`/records/${prevPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1">
-              <span className="text-xs text-zinc-500">← 이전 글</span>
-              <span className="text-sm text-zinc-200 truncate">{prevPost.title}</span>
-            </Link>
-          ) : <div />}
-          {nextPost ? (
-            <Link href={`/records/${nextPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1 text-right">
-              <span className="text-xs text-zinc-500">다음 글 →</span>
-              <span className="text-sm text-zinc-200 truncate">{nextPost.title}</span>
-            </Link>
-          ) : <div />}
-        </div>
+        {!post.is_notice && (
+          <div className="grid grid-cols-2 gap-3">
+            {prevPost ? (
+              <Link href={`/records/${prevPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1">
+                <span className="text-xs text-zinc-500">← 이전 글</span>
+                <span className="text-sm text-zinc-200 truncate">{prevPost.title}</span>
+              </Link>
+            ) : <div />}
+            {nextPost ? (
+              <Link href={`/records/${nextPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1 text-right">
+                <span className="text-xs text-zinc-500">다음 글 →</span>
+                <span className="text-sm text-zinc-200 truncate">{nextPost.title}</span>
+              </Link>
+            ) : <div />}
+          </div>
+        )}
       </section>
 
       {/* 이미지 라이트박스 */}
