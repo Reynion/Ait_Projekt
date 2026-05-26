@@ -61,8 +61,8 @@ export default function RecordDetailPage() {
 
       const numId = Number(id)
       const [{ data: prev }, { data: next }] = await Promise.all([
-        supabase.from('record_posts').select('id, title').eq('is_notice', false).lt('id', numId).order('id', { ascending: false }).limit(1).single(),
-        supabase.from('record_posts').select('id, title').eq('is_notice', false).gt('id', numId).order('id', { ascending: true }).limit(1).single(),
+        supabase.from('record_posts').select('id, title').eq('is_notice', false).lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('record_posts').select('id, title').eq('is_notice', false).gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
       ])
       if (prev) setPrevPost(prev)
       if (next) setNextPost(next)

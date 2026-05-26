@@ -47,8 +47,8 @@ export default function PostDetailPage() {
 
       const numId = Number(id)
       const [{ data: prev }, { data: next }] = await Promise.all([
-        supabase.from('posts').select('id, title').lt('id', numId).order('id', { ascending: false }).limit(1).single(),
-        supabase.from('posts').select('id, title').gt('id', numId).order('id', { ascending: true }).limit(1).single(),
+        supabase.from('posts').select('id, title').lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('posts').select('id, title').gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
       ])
       if (prev) setPrevPost(prev)
       if (next) setNextPost(next)
