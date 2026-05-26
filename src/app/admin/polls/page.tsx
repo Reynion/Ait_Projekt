@@ -76,7 +76,13 @@ export default function AdminPolls() {
                 {poll.ends_at && <span>마감: {new Date(poll.ends_at).toLocaleDateString('ko-KR')}</span>}
               </div>
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 flex-wrap justify-end">
+              <Link
+                href={`/admin/polls/${poll.id}`}
+                className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+              >
+                현황
+              </Link>
               <button
                 onClick={() => toggleActive(poll)}
                 className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
