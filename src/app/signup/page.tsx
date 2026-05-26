@@ -2,14 +2,13 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignupPage() {
-  const router = useRouter()
   const [form, setForm] = useState({ email: '', password: '', passwordConfirm: '', nickname: '', inviteCode: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -70,7 +69,7 @@ export default function SignupPage() {
       return
     }
 
-    // 4. Auth 계정 생성
+    // 4. Auth 계정 생성 (이메일 확인 메일 발송)
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
@@ -82,30 +81,44 @@ export default function SignupPage() {
       return
     }
 
-    // 5. users 테이블 row 생성
-    const { error: insertError } = await supabase.from('users').insert({
-      id: authData.user.id,
-      email: form.email,
-      nickname: form.nickname.trim(),
-      role: 'member',
+    // 5. users 테이블 row 생성 (service role API 경유)
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: authData.user.id, email: form.email, nickname: form.nickname.trim() }),
     })
 
-    if (insertError) {
-      await fetch('/api/auth/cleanup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: authData.user.id }),
-      })
+    if (!res.ok) {
       setError('계정 생성에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
     }
 
-    router.push('/')
-    router.refresh()
+    setSuccess(true)
+    setLoading(false)
   }
 
   const inputClass = "border border-zinc-600 bg-zinc-900 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
+
+  if (success) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
+        <div className="w-full max-w-sm bg-zinc-900 border border-zinc-700 rounded-2xl p-8 flex flex-col gap-6 text-center">
+          <div className="flex flex-col gap-2">
+            <span className="text-4xl">📧</span>
+            <h1 className="text-xl font-bold text-white">인증 이메일을 발송했습니다</h1>
+            <p className="text-sm text-zinc-400">{form.email} 로 발송된 메일의 링크를 클릭해 인증을 완료해주세요.</p>
+          </div>
+          <Link
+            href="/login"
+            className="bg-zinc-100 text-zinc-900 rounded-lg py-2.5 text-sm font-semibold hover:bg-white transition-colors"
+          >
+            로그인 페이지로 이동
+          </Link>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
