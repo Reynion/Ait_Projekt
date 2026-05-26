@@ -31,11 +31,12 @@ export default function SignupPage() {
     setLoading(true)
     const supabase = createClient()
 
+    // 1. 초대 코드 확인
     const { data: codeData } = await supabase
       .from('invite_codes')
       .select('id, is_active')
-      .eq('code', form.inviteCode.trim())
-      .single()
+      .eq('code', form.inviteCode.trim().toUpperCase())
+      .maybeSingle()
 
     if (!codeData || !codeData.is_active) {
       setError('유효하지 않은 초대 코드입니다.')
@@ -43,17 +44,45 @@ export default function SignupPage() {
       return
     }
 
+    // 2. 닉네임 중복 확인
+    const { data: existingNick } = await supabase
+      .from('users')
+      .select('id')
+      .eq('nickname', form.nickname.trim())
+      .maybeSingle()
+
+    if (existingNick) {
+      setError('이미 사용 중인 닉네임입니다.')
+      setLoading(false)
+      return
+    }
+
+    // 3. 이메일 중복 확인
+    const { data: existingEmail } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', form.email.trim())
+      .maybeSingle()
+
+    if (existingEmail) {
+      setError('이미 사용 중인 이메일입니다.')
+      setLoading(false)
+      return
+    }
+
+    // 4. Auth 계정 생성
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
     })
 
     if (signUpError || !authData.user) {
-      setError(signUpError?.message === 'User already registered' ? '이미 사용 중인 이메일입니다.' : '가입에 실패했습니다.')
+      setError('가입에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
     }
 
+    // 5. users 테이블 row 생성
     const { error: insertError } = await supabase.from('users').insert({
       id: authData.user.id,
       email: form.email,
