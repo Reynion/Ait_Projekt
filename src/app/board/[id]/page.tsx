@@ -25,6 +25,8 @@ export default function BoardPostDetailPage() {
   const [post, setPost] = useState<BoardPost | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [prevPost, setPrevPost] = useState<{ id: number; title: string } | null>(null)
+  const [nextPost, setNextPost] = useState<{ id: number; title: string } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -44,6 +46,15 @@ export default function BoardPostDetailPage() {
 
       if (!data) { router.push('/board'); return }
       setPost(data as unknown as BoardPost)
+
+      const numId = Number(id)
+      const [{ data: prev }, { data: next }] = await Promise.all([
+        supabase.from('board_posts').select('id, title').eq('is_notice', false).lt('id', numId).order('id', { ascending: false }).limit(1).single(),
+        supabase.from('board_posts').select('id, title').eq('is_notice', false).gt('id', numId).order('id', { ascending: true }).limit(1).single(),
+      ])
+      if (prev) setPrevPost(prev)
+      if (next) setNextPost(next)
+
       setLoading(false)
     }
     load()
@@ -147,6 +158,22 @@ export default function BoardPostDetailPage() {
           {currentUserId && (
             <BoardCommentSection boardPostId={post.id} currentUserId={currentUserId} />
           )}
+        </div>
+
+        {/* 이전/다음 */}
+        <div className="grid grid-cols-2 gap-3">
+          {prevPost ? (
+            <Link href={`/board/${prevPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1">
+              <span className="text-xs text-zinc-500">← 이전 글</span>
+              <span className="text-sm text-zinc-200 truncate">{prevPost.title}</span>
+            </Link>
+          ) : <div />}
+          {nextPost ? (
+            <Link href={`/board/${nextPost.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-1 text-right">
+              <span className="text-xs text-zinc-500">다음 글 →</span>
+              <span className="text-sm text-zinc-200 truncate">{nextPost.title}</span>
+            </Link>
+          ) : <div />}
         </div>
       </div>
     </main>
