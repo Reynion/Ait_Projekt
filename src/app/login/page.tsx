@@ -33,7 +33,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
       <div className="w-full max-w-sm bg-white dark:bg-zinc-800 rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">밴드 앱 로그인</h1>
+        <h1 className="text-2xl font-bold text-center mb-6">Ait 놀이터 로그인</h1>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">이메일</label>
