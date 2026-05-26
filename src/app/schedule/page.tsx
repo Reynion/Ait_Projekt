@@ -66,7 +66,8 @@ export default function SchedulePage() {
   async function handleDelete(id: number) {
     if (!confirm('일정을 삭제할까요?')) return
     const supabase = createClient()
-    await supabase.from('schedules').delete().eq('id', id)
+    const { error } = await supabase.from('schedules').delete().eq('id', id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     setSchedules(prev => prev.filter(s => s.id !== id))
   }
 

@@ -106,7 +106,8 @@ export default function CommentSection({ postId, currentUserId }: Props) {
 
   async function handleDelete(commentId: number) {
     const supabase = createClient()
-    await supabase.from('comments').delete().eq('id', commentId)
+    const { error } = await supabase.from('comments').delete().eq('id', commentId)
+    if (!error) fetchComments()
   }
 
   const topLevel = comments.filter(c => c.parent_id === null)

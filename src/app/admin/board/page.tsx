@@ -47,7 +47,8 @@ export default function AdminBoardPage() {
   async function handleDeletePost(id: number) {
     if (!confirm('게시글과 댓글이 모두 삭제됩니다. 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('board_posts').delete().eq('id', id)
+    const { error } = await supabase.from('board_posts').delete().eq('id', id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     setPosts(prev => prev.filter(p => p.id !== id))
     setComments(prev => prev.filter(c => c.board_post_id !== id))
     if (openPostId === id) setOpenPostId(null)
@@ -55,7 +56,8 @@ export default function AdminBoardPage() {
 
   async function handleDeleteComment(id: number) {
     const supabase = createClient()
-    await supabase.from('board_comments').delete().eq('id', id)
+    const { error } = await supabase.from('board_comments').delete().eq('id', id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     setComments(prev => prev.filter(c => c.id !== id))
   }
 

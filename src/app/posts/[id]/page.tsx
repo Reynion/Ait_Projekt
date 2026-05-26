@@ -61,7 +61,8 @@ export default function PostDetailPage() {
   async function handleDelete() {
     if (!post || !confirm('정말 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').delete().eq('id', post.id)
+    const { error } = await supabase.from('posts').delete().eq('id', post.id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     router.push('/posts')
   }
 

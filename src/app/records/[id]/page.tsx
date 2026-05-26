@@ -74,7 +74,8 @@ export default function RecordDetailPage() {
   async function handleDelete() {
     if (!confirm('기록을 삭제할까요?')) return
     const supabase = createClient()
-    await supabase.from('record_posts').delete().eq('id', id)
+    const { error } = await supabase.from('record_posts').delete().eq('id', id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     router.push('/records')
   }
 

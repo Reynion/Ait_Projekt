@@ -40,7 +40,8 @@ export default function AdminRecords() {
   async function handleDelete(id: number) {
     if (!confirm('기록을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('record_posts').delete().eq('id', id)
+    const { error } = await supabase.from('record_posts').delete().eq('id', id)
+    if (error) { alert('삭제에 실패했습니다.'); return }
     setRecords(prev => prev.filter(r => r.id !== id))
   }
 
