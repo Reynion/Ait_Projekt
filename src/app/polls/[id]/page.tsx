@@ -16,6 +16,7 @@ interface Poll {
   max_votes_per_user: number
   is_active: boolean
   ends_at: string | null
+  show_results: boolean
 }
 
 interface Candidate {
@@ -187,15 +188,17 @@ export default function PollDetailPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex-1 bg-zinc-700 rounded-full h-2 border border-zinc-600">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all"
-                      style={{ width: `${pct}%` }}
-                    />
+                {poll.show_results && (
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 bg-zinc-700 rounded-full h-2 border border-zinc-600">
+                      <div
+                        className="bg-blue-500 h-2 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-zinc-400 w-20 text-right">{candidate.voteCount}표 ({pct}%)</span>
                   </div>
-                  <span className="text-xs text-zinc-400 w-20 text-right">{candidate.voteCount}표 ({pct}%)</span>
-                </div>
+                )}
               </div>
             )
           })}

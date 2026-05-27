@@ -16,6 +16,7 @@ const EMPTY_FORM = {
   description: '',
   max_votes_per_user: 1,
   ends_at: '',
+  show_results: true,
 }
 
 const inputClass = "bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
@@ -79,6 +80,7 @@ export default function NewPollPage() {
       description: form.description || null,
       max_votes_per_user: form.max_votes_per_user,
       ends_at: form.ends_at || null,
+      show_results: form.show_results,
       created_by: user?.id,
     }).select().single()
 
@@ -113,7 +115,7 @@ export default function NewPollPage() {
             <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} placeholder="투표에 대한 설명..." className={`${inputClass} resize-none`} />
           </div>
 
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex flex-col gap-1.5 flex-1">
               <label className="text-sm font-medium text-zinc-300">1인 최대 투표 수 *</label>
               <input type="number" min={1} required value={form.max_votes_per_user} onChange={e => setForm(p => ({ ...p, max_votes_per_user: Number(e.target.value) }))} className={inputClass} />
@@ -122,6 +124,22 @@ export default function NewPollPage() {
               <label className="text-sm font-medium text-zinc-300">마감일</label>
               <input type="date" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} className={inputClass} />
             </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-zinc-300">현황 공개</label>
+            <button
+              type="button"
+              onClick={() => setForm(p => ({ ...p, show_results: !p.show_results }))}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                form.show_results
+                  ? 'bg-blue-500/10 border-blue-500/40 text-blue-400'
+                  : 'bg-zinc-700 border-zinc-600 text-zinc-400'
+              }`}
+            >
+              {form.show_results ? '공개' : '비공개'}
+            </button>
+            <span className="text-xs text-zinc-500">{form.show_results ? '멤버에게 실시간 득표 현황이 표시됩니다.' : '멤버에게 득표 현황이 숨겨집니다.'}</span>
           </div>
         </section>
 
