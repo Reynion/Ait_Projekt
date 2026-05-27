@@ -14,12 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://ait-projekt-alpha.vercel.app"),
   title: "🎸 Ait 놀이터",
   description: "락 밴드 Ait의 커뮤니티 공간",
   openGraph: {
     title: "🎸 Ait 놀이터",
     description: "락 밴드 Ait의 커뮤니티 공간",
-    images: ["/og-image.png"],
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
 };
 
