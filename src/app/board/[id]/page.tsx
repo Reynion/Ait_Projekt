@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import BoardCommentSection from '@/components/BoardCommentSection'
+import { notifyAll } from '@/lib/notifications'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -72,7 +73,13 @@ export default function BoardPostDetailPage() {
     if (!post || !isAdmin) return
     const supabase = createClient()
     const { error } = await supabase.from('board_posts').update({ is_notice: !post.is_notice }).eq('id', post.id)
-    if (!error) setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+    if (!error) {
+      setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+      if (!post.is_notice) {
+        const { data: { user } } = await supabase.auth.getUser()
+        await notifyAll({ supabase, senderId: user?.id ?? '', type: 'new_notice', message: `새 공지가 등록됐습니다: ${post.title}`, link: `/board/${post.id}` })
+      }
+    }
   }
 
   if (loading) return (
@@ -157,7 +164,7 @@ export default function BoardPostDetailPage() {
         {/* 댓글 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
           {currentUserId && (
-            <BoardCommentSection boardPostId={post.id} currentUserId={currentUserId} />
+            <BoardCommentSection boardPostId={post.id} currentUserId={currentUserId} postAuthorId={post.user_id} link={`/board/${post.id}`} />
           )}
         </div>
 

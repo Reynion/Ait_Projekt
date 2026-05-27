@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { notifyAll } from '@/lib/notifications'
 
 interface Post {
   id: number
@@ -89,6 +90,14 @@ export default function NewPollPage() {
     await supabase.from('poll_candidates').insert(
       selectedPostIds.map(postId => ({ poll_id: poll.id, post_id: postId }))
     )
+
+    await notifyAll({
+      supabase,
+      senderId: user?.id ?? '',
+      type: 'new_poll',
+      message: `새 투표가 생성됐습니다: ${form.title}`,
+      link: `/polls/${poll.id}`,
+    })
 
     router.push('/admin/polls')
   }

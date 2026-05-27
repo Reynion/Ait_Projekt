@@ -207,7 +207,7 @@ export default function PollDetailPage() {
         {/* 댓글 */}
         {currentUserId && (
           <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
-            <PollCommentSection pollId={poll.id} currentUserId={currentUserId} />
+            <PollCommentSection pollId={poll.id} currentUserId={currentUserId} link={`/polls/${poll.id}`} />
           </div>
         )}
       </section>

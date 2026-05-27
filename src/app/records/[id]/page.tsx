@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import RecordCommentSection from '@/components/RecordCommentSection'
+import { notifyAll } from '@/lib/notifications'
 import Image from 'next/image'
 import Link from 'next/link'
 import { extractYoutubeId } from '@/lib/youtube'
@@ -83,7 +84,13 @@ export default function RecordDetailPage() {
     if (!post || !isAdmin) return
     const supabase = createClient()
     const { error } = await supabase.from('record_posts').update({ is_notice: !post.is_notice }).eq('id', id)
-    if (!error) setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+    if (!error) {
+      setPost(p => p ? { ...p, is_notice: !p.is_notice } : p)
+      if (!post.is_notice) {
+        const { data: { user } } = await supabase.auth.getUser()
+        await notifyAll({ supabase, senderId: user?.id ?? '', type: 'new_notice', message: `새 공지가 등록됐습니다: ${post.title}`, link: `/records/${id}` })
+      }
+    }
   }
 
   if (loading) return (
@@ -185,7 +192,7 @@ export default function RecordDetailPage() {
         {/* 댓글 */}
         {currentUserId && (
           <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
-            <RecordCommentSection recordPostId={post.id} currentUserId={currentUserId} />
+            <RecordCommentSection recordPostId={Number(id)} currentUserId={currentUserId} postAuthorId={post.created_by} link={`/records/${id}`} />
           </div>
         )}
 

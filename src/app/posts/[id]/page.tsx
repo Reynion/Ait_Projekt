@@ -155,7 +155,7 @@ export default function PostDetailPage() {
         {/* 댓글 */}
         <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
           {currentUserId && (
-            <CommentSection postId={post.id} currentUserId={currentUserId} />
+            <CommentSection postId={post.id} currentUserId={currentUserId} postAuthorId={post.user_id} link={`/posts/${post.id}`} />
           )}
         </div>
 

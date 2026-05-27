@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
+import { notifyComment } from '@/lib/notifications'
 import Image from 'next/image'
 
 interface Comment {
@@ -21,6 +22,7 @@ interface ReplyTarget {
 interface Props {
   pollId: number
   currentUserId: string
+  link: string
 }
 
 function renderContent(content: string) {
@@ -44,12 +46,19 @@ function Avatar({ url, nickname }: { url: string | null; nickname: string }) {
   )
 }
 
-export default function PollCommentSection({ pollId, currentUserId }: Props) {
+export default function PollCommentSection({ pollId, currentUserId, link }: Props) {
   const [comments, setComments] = useState<Comment[]>([])
   const [content, setContent] = useState('')
   const [replyTarget, setReplyTarget] = useState<ReplyTarget | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [currentUserNickname, setCurrentUserNickname] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.from('users').select('nickname').eq('id', currentUserId).single()
+      .then(({ data }) => { if (data) setCurrentUserNickname(data.nickname) })
+  }, [currentUserId])
 
   async function fetchComments() {
     const supabase = createClient()
@@ -97,6 +106,16 @@ export default function PollCommentSection({ pollId, currentUserId }: Props) {
       user_id: currentUserId,
       content: content.trim(),
       parent_id: replyTarget?.parentId ?? null,
+    })
+    const parentComment = replyTarget ? (comments.find(c => c.id === replyTarget.parentId) ?? null) : null
+    await notifyComment({
+      supabase,
+      senderId: currentUserId,
+      senderNickname: currentUserNickname,
+      postAuthorId: null,
+      parentComment: parentComment ? { user_id: parentComment.user_id } : null,
+      content: content.trim(),
+      link,
     })
     setContent('')
     setReplyTarget(null)
