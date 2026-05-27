@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface UserProfile {
   id: string
@@ -19,6 +20,7 @@ const inputClass = "bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2.5 te
 export default function ProfilePage() {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { theme, setTheme } = useTheme()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [nickname, setNickname] = useState('')
@@ -121,6 +123,58 @@ export default function ProfilePage() {
             {uploading ? '업로드 중...' : '이미지 변경'}
           </button>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+        </section>
+
+        {/* 테마 설정 */}
+        <section className="bg-zinc-800 border border-zinc-700 rounded-xl p-6">
+          <h2 className="text-base font-semibold text-white mb-4">테마 설정</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setTheme('dark')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                theme === 'dark'
+                  ? 'border-zinc-400 bg-zinc-700'
+                  : 'border-zinc-600 bg-zinc-900 hover:border-zinc-500'
+              }`}
+            >
+              {/* 다크 모드 미리보기 — 고정 색상 (테마 역전 영향 없음) */}
+              <div className="w-full h-14 rounded-lg border overflow-hidden flex flex-col gap-1 p-1.5" style={{background:'#09090b', borderColor:'#3f3f46'}}>
+                <div className="h-2 w-3/4 rounded" style={{background:'#3f3f46'}} />
+                <div className="h-2 w-1/2 rounded" style={{background:'#27272a'}} />
+                <div className="h-2 w-2/3 rounded" style={{background:'#27272a'}} />
+              </div>
+              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-white' : 'text-zinc-400'}`}>
+                🌙 다크
+              </span>
+              {theme === 'dark' && (
+                <span className="text-xs text-zinc-400">현재 적용 중</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setTheme('light')}
+              className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${
+                theme === 'light'
+                  ? 'border-zinc-400 bg-zinc-700'
+                  : 'border-zinc-600 bg-zinc-900 hover:border-zinc-500'
+              }`}
+            >
+              {/* 라이트 모드 미리보기 — 고정 색상 (테마 역전 영향 없음) */}
+              <div className="w-full h-14 rounded-lg border overflow-hidden flex flex-col gap-1 p-1.5" style={{background:'#fafafa', borderColor:'#d4d4d8'}}>
+                <div className="h-2 w-3/4 rounded" style={{background:'#d4d4d8'}} />
+                <div className="h-2 w-1/2 rounded" style={{background:'#e4e4e7'}} />
+                <div className="h-2 w-2/3 rounded" style={{background:'#e4e4e7'}} />
+              </div>
+              <span className={`text-sm font-medium ${theme === 'light' ? 'text-white' : 'text-zinc-400'}`}>
+                ☀️ 라이트
+              </span>
+              {theme === 'light' && (
+                <span className="text-xs text-zinc-400">현재 적용 중</span>
+              )}
+            </button>
+          </div>
         </section>
 
         {/* 기본 정보 */}

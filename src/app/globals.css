@@ -1,20 +1,65 @@
 @import "tailwindcss";
 
+/* ── 중간 변수: 다크 기본값 ── */
 :root {
   --background: #09090b;
   --foreground: #ffffff;
+
+  /* zinc 팔레트용 중간 변수 (--zc-*) — 다크: 300/400/500 한 단계 밝게 shift */
+  --zc-50:  oklch(98.5% 0       0  );
+  --zc-100: oklch(96.1% 0.001 286  );
+  --zc-200: oklch(92.0% 0.004 286  );
+  --zc-300: oklch(92.0% 0.004 286  );
+  --zc-400: oklch(87.1% 0.006 286  );
+  --zc-500: oklch(70.8% 0.010 286  );
+  --zc-600: oklch(44.2% 0.011 286  );
+  --zc-700: oklch(37.2% 0.010 286  );
+  --zc-800: oklch(27.4% 0.006 286  );
+  --zc-900: oklch(21.0% 0.006 286  );
+  --zc-950: oklch(14.5% 0.004 286  );
+  --zc-white: #ffffff;
 }
 
+/* ── 라이트 모드: zinc 팔레트 역전 ── */
+html.light {
+  --background: #ffffff;
+  --foreground: #09090b;
+
+  --zc-50:  oklch(14.5% 0.004 286  );
+  --zc-100: oklch(21.0% 0.006 286  );
+  --zc-200: oklch(27.4% 0.006 286  );
+  --zc-300: oklch(37.2% 0.010 286  );
+  --zc-400: oklch(44.2% 0.011 286  );
+  --zc-500: oklch(55.1% 0.013 286  );
+  --zc-600: oklch(70.8% 0.010 286  );
+  --zc-700: oklch(87.1% 0.006 286  );
+  --zc-800: oklch(92.0% 0.004 286  );
+  --zc-900: oklch(96.1% 0.001 286  );
+  --zc-950: oklch(98.5% 0       0  );
+
+  /* text-white → 라이트 배경에서 어두운 텍스트 */
+  --zc-white: #09090b;
+}
+
+/* ── Tailwind 테마 등록: --zc-* 변수 참조 ── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* zinc 색상을 한 단계씩 밝게 shift — 어두운 배경에서 가독성 향상 */
-  --color-zinc-300: oklch(92.0% 0.004 286);
-  --color-zinc-400: oklch(87.1% 0.006 286);
-  --color-zinc-500: oklch(70.8% 0.010 286);
+  --color-zinc-50:  var(--zc-50);
+  --color-zinc-100: var(--zc-100);
+  --color-zinc-200: var(--zc-200);
+  --color-zinc-300: var(--zc-300);
+  --color-zinc-400: var(--zc-400);
+  --color-zinc-500: var(--zc-500);
+  --color-zinc-600: var(--zc-600);
+  --color-zinc-700: var(--zc-700);
+  --color-zinc-800: var(--zc-800);
+  --color-zinc-900: var(--zc-900);
+  --color-zinc-950: var(--zc-950);
+  --color-white: var(--zc-white);
 }
 
 html {
@@ -37,4 +82,16 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 input[type="date"]::-webkit-calendar-picker-indicator:hover,
 input[type="time"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
+}
+
+/* 라이트 모드에서는 달력 아이콘 반전 불필요 */
+html.light input[type="date"]::-webkit-calendar-picker-indicator,
+html.light input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+  opacity: 0.5;
+}
+
+html.light input[type="date"]::-webkit-calendar-picker-indicator:hover,
+html.light input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
 }

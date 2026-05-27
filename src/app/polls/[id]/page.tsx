@@ -179,8 +179,8 @@ export default function PollDetailPage() {
                       disabled={voting}
                       className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
                         isVoted
-                          ? 'bg-blue-600 border-blue-500 text-white'
-                          : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'
+                          ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
+                          : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-[#ffffff]'
                       }`}
                     >
                       {isVoted ? '✓ 투표됨' : '투표'}
@@ -190,7 +190,7 @@ export default function PollDetailPage() {
 
                 {poll.show_results && (
                   <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-zinc-700 rounded-full h-2 border border-zinc-600">
+                    <div className="flex-1 bg-zinc-600 rounded-full h-2 border border-zinc-500">
                       <div
                         className="bg-blue-500 h-2 rounded-full transition-all"
                         style={{ width: `${pct}%` }}

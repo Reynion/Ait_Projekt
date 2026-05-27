@@ -96,8 +96,8 @@ export default function LikeButton({ postId, currentUserId }: Props) {
         disabled={loading}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
           summary.myVote === true
-            ? 'bg-blue-600 border-blue-500 text-white'
-            : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'
+            ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
+            : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-[#ffffff]'
         }`}
       >
         👍 추천 <span className="font-bold">{summary.likes}</span>
@@ -107,8 +107,8 @@ export default function LikeButton({ postId, currentUserId }: Props) {
         disabled={loading}
         className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
           summary.myVote === false
-            ? 'bg-red-600 border-red-500 text-white'
-            : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-white'
+            ? 'bg-red-600 border-red-500 text-[#ffffff]'
+            : 'bg-zinc-800 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-[#ffffff]'
         }`}
       >
         👎 비추천 <span className="font-bold">{summary.dislikes}</span>

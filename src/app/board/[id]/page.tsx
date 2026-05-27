@@ -104,7 +104,7 @@ export default function BoardPostDetailPage() {
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               {post.is_notice && (
-                <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
+                <span className="text-xs bg-amber-500/20 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
               )}
               <h1 className="text-2xl font-bold text-white min-w-0 break-words">{post.title}</h1>
             </div>
@@ -112,7 +112,7 @@ export default function BoardPostDetailPage() {
               {isAdmin && (
                 <button
                   onClick={toggleNotice}
-                  className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-400 border-amber-600 hover:border-amber-400' : 'text-zinc-500 border-zinc-700 hover:text-amber-400 hover:border-amber-600'}`}
+                  className={`text-sm transition-colors border px-3 py-1 rounded-lg ${post.is_notice ? 'text-amber-700 border-amber-600 hover:border-amber-400' : 'text-zinc-500 border-zinc-700 hover:text-amber-700 hover:border-amber-600'}`}
                 >
                   {post.is_notice ? '공지 해제' : '공지 설정'}
                 </button>

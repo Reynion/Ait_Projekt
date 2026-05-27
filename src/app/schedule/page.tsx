@@ -144,7 +144,7 @@ export default function SchedulePage() {
           </div>
 
           {/* 날짜 그리드 */}
-          <div className="grid grid-cols-7 gap-px bg-zinc-700 rounded-xl overflow-hidden border border-zinc-700">
+          <div className="grid grid-cols-7 gap-px bg-zinc-500 rounded-xl overflow-hidden border border-zinc-500">
             {cells.map((day, idx) => {
               if (!day) return <div key={idx} className="bg-zinc-900 min-h-[90px]" />
               const dateStr = getDateStr(day)
@@ -170,8 +170,8 @@ export default function SchedulePage() {
                         key={s.id}
                         className={`text-xs px-1.5 py-0.5 rounded truncate ${
                           s.type === 'official'
-                            ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                            : 'bg-green-500/20 text-green-300 border border-green-500/30'
+                            ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                            : 'bg-green-500/20 text-green-600 border border-green-500/30'
                         }`}
                       >
                         {s.title}
@@ -227,7 +227,7 @@ export default function SchedulePage() {
                     <div className="flex items-start justify-between gap-1 mb-1">
                       <p className="text-sm font-semibold text-white leading-tight">{s.title}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${
-                        s.type === 'official' ? 'bg-blue-500/20 text-blue-300' : 'bg-green-500/20 text-green-300'
+                        s.type === 'official' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-600'
                       }`}>
                         {s.type === 'official' ? '공식' : '개인'}
                       </span>

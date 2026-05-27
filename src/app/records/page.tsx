@@ -28,8 +28,8 @@ const TYPE_LABEL: Record<string, string> = {
 }
 
 const TYPE_STYLE: Record<string, string> = {
-  concert: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-  practice: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  concert: 'bg-purple-500/20 text-purple-600 border-purple-500/30',
+  practice: 'bg-amber-500/20 text-amber-600 border-amber-500/30',
   etc: 'bg-zinc-600/50 text-zinc-300 border-zinc-500/30',
 }
 

@@ -195,7 +195,7 @@ export default function BoardPage() {
                   <span className="text-sm text-amber-600 font-mono w-7 flex-shrink-0 pt-0.5 text-right">📌</span>
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
+                      <span className="text-xs bg-amber-500/20 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
                       <h3 className="font-semibold text-white truncate">{post.title}</h3>
                     </div>
                     <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>

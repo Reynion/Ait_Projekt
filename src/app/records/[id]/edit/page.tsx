@@ -176,7 +176,7 @@ export default function RecordEditPage() {
                   onChange={e => setIsNotice(e.target.checked)}
                   className="w-4 h-4 accent-amber-500"
                 />
-                <span className="text-sm text-amber-400 font-medium">📌 공지로 등록</span>
+                <span className="text-sm text-amber-700 font-medium">📌 공지로 등록</span>
               </label>
             )}
 
@@ -192,13 +192,13 @@ export default function RecordEditPage() {
                 {existingImageUrls.map((url, idx) => (
                   <div key={`ex-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
                     <Image src={url} alt="" fill className="object-cover" unoptimized />
-                    <button type="button" onClick={() => setExistingImageUrls(prev => prev.filter((_, i) => i !== idx))} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-white text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
+                    <button type="button" onClick={() => setExistingImageUrls(prev => prev.filter((_, i) => i !== idx))} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
                   </div>
                 ))}
                 {newPreviews.map((src, idx) => (
                   <div key={`new-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
                     <Image src={src} alt="" fill className="object-cover" unoptimized />
-                    <button type="button" onClick={() => { setNewImageFiles(p => p.filter((_, i) => i !== idx)); setNewPreviews(p => p.filter((_, i) => i !== idx)) }} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-white text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
+                    <button type="button" onClick={() => { setNewImageFiles(p => p.filter((_, i) => i !== idx)); setNewPreviews(p => p.filter((_, i) => i !== idx)) }} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
                   </div>
                 ))}
               </div>

@@ -128,7 +128,7 @@ export default function NewBoardPostPage() {
                   onChange={e => setIsNotice(e.target.checked)}
                   className="w-4 h-4 accent-amber-500"
                 />
-                <span className="text-sm text-amber-400 font-medium">📌 공지로 등록</span>
+                <span className="text-sm text-amber-700 font-medium">📌 공지로 등록</span>
               </label>
             )}
 
@@ -153,7 +153,7 @@ export default function NewBoardPostPage() {
                       <button
                         type="button"
                         onClick={() => removeImage(idx)}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-white text-xs flex items-center justify-center hover:bg-red-500 transition-colors"
+                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors"
                       >
                         ✕
                       </button>

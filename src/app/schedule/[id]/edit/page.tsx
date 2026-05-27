@@ -104,7 +104,7 @@ export default function ScheduleEditPage() {
                 onClick={() => setForm(f => ({ ...f, type: 'personal' }))}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
                   form.type === 'personal'
-                    ? 'bg-green-600 border-green-500 text-white'
+                    ? 'bg-green-600 border-green-500 text-[#ffffff]'
                     : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
                 }`}
               >
@@ -115,7 +115,7 @@ export default function ScheduleEditPage() {
                 onClick={() => setForm(f => ({ ...f, type: 'official' }))}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
                   form.type === 'official'
-                    ? 'bg-blue-600 border-blue-500 text-white'
+                    ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
                     : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
                 }`}
               >
