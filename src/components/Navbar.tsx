@@ -72,9 +72,9 @@ export default function Navbar() {
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Node
-      const outsideDesktop = notiRef.current && !notiRef.current.contains(target)
-      const outsideMobile = notiRefMobile.current && !notiRefMobile.current.contains(target)
-      if (outsideDesktop && outsideMobile) setNotiOpen(false)
+      const insideDesktop = notiRef.current?.contains(target) ?? false
+      const insideMobile = notiRefMobile.current?.contains(target) ?? false
+      if (!insideDesktop && !insideMobile) setNotiOpen(false)
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
