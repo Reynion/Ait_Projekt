@@ -241,7 +241,7 @@ export default function Navbar() {
               )}
             </button>
             {notiOpen && (
-              <div className="absolute right-0 top-full mt-2 w-[min(18rem,calc(100vw-1rem))] bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
+              <div className="fixed right-2 top-14 w-[min(18rem,calc(100vw-1rem))] bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
                   <span className="text-sm font-semibold text-white">알림</span>
                   {unreadCount > 0 && (
