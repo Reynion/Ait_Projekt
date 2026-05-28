@@ -159,70 +159,78 @@ export default function PollDetailPage() {
 
         {/* 후보곡 목록 */}
         <div className="flex flex-col gap-3">
-          {candidates.map(candidate => {
-            const post = candidate.posts
-            if (!post) return null
-            const youtubeId = post.youtube_url ? extractYoutubeId(post.youtube_url) : null
-            const thumbnail = youtubeId ? getThumbnailUrl(youtubeId) : null
-            const isVoted = myVotes.includes(candidate.id)
-            const pct = totalVotes > 0 ? Math.round((candidate.voteCount / totalVotes) * 100) : 0
+          {(() => {
+            const showResults = poll.show_results || !poll.is_active
+            const sortedCounts = [...new Set(candidates.map(c => c.voteCount))].sort((a, b) => b - a)
+            const getRank = (voteCount: number) => sortedCounts.indexOf(voteCount) + 1
+            const rankStyle = (rank: number) =>
+              rank === 1 ? 'text-yellow-400 font-bold' :
+              rank === 2 ? 'text-zinc-300 font-bold' :
+              rank === 3 ? 'text-orange-400 font-bold' : 'text-zinc-500'
 
-            return (
-              <div
-                key={candidate.id}
-                onClick={() => youtubeId && setModalYoutubeId(youtubeId)}
-                className={`bg-zinc-800 rounded-xl p-4 flex flex-col gap-3 border-2 transition-all ${
-                  isVoted ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-700 hover:border-zinc-500'
-                } ${youtubeId ? 'cursor-pointer' : ''}`}
-              >
-                <div className="flex gap-3 items-center">
-                  {thumbnail ? (
-                    <div className="relative w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
-                      <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
-                      {youtubeId && (
+            return candidates.map(candidate => {
+              const post = candidate.posts
+              if (!post) return null
+              const youtubeId = post.youtube_url ? extractYoutubeId(post.youtube_url) : null
+              const thumbnail = youtubeId ? getThumbnailUrl(youtubeId) : null
+              const isVoted = myVotes.includes(candidate.id)
+              const pct = totalVotes > 0 ? Math.round((candidate.voteCount / totalVotes) * 100) : 0
+              const rank = getRank(candidate.voteCount)
+
+              return (
+                <div
+                  key={candidate.id}
+                  className={`bg-zinc-800 rounded-xl p-4 flex flex-col gap-3 border-2 transition-all ${
+                    isVoted ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-700 hover:border-zinc-500'
+                  }`}
+                >
+                  <div className="flex gap-3 items-center">
+                    {thumbnail ? (
+                      <div
+                        onClick={() => setModalYoutubeId(youtubeId)}
+                        className="relative w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600 cursor-pointer"
+                      >
+                        <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                           <span className="text-white text-lg">▶</span>
                         </div>
-                      )}
+                      </div>
+                    ) : (
+                      <div className="w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl">🎵</div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-white truncate">{post.title}</p>
+                      {post.artist && <p className="text-xs text-zinc-400">{post.artist}</p>}
+                      <p className="text-xs text-zinc-500 mt-0.5">{post.users?.nickname}</p>
                     </div>
-                  ) : (
-                    <div className="w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl">🎵</div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-white truncate">{post.title}</p>
-                    {post.artist && <p className="text-xs text-zinc-400">{post.artist}</p>}
-                    <p className="text-xs text-zinc-500 mt-0.5">{post.users?.nickname}</p>
-                    {youtubeId && <p className="text-xs text-zinc-500 mt-0.5">탭하면 영상 재생</p>}
+                    {poll.is_active && (
+                      <button
+                        onClick={e => handleVote(e, candidate.id)}
+                        disabled={voting}
+                        className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
+                          isVoted
+                            ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
+                            : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-[#ffffff]'
+                        }`}
+                      >
+                        {isVoted ? '✓ 투표됨' : '투표'}
+                      </button>
+                    )}
                   </div>
-                  {poll.is_active && (
-                    <button
-                      onClick={e => handleVote(e, candidate.id)}
-                      disabled={voting}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
-                        isVoted
-                          ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
-                          : 'bg-zinc-700 border-zinc-600 text-zinc-300 hover:border-zinc-400 hover:text-[#ffffff]'
-                      }`}
-                    >
-                      {isVoted ? '✓ 투표됨' : '투표'}
-                    </button>
+
+                  {showResults && (
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs w-7 text-center flex-shrink-0 ${rankStyle(rank)}`}>{rank}위</span>
+                      <div className="flex-1 bg-zinc-600 rounded-full h-2 border border-zinc-500">
+                        <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-xs text-zinc-400 w-20 text-right flex-shrink-0">{candidate.voteCount}표 ({pct}%)</span>
+                    </div>
                   )}
                 </div>
-
-                {poll.show_results && (
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-zinc-600 rounded-full h-2 border border-zinc-500">
-                      <div
-                        className="bg-blue-500 h-2 rounded-full transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-zinc-400 w-20 text-right">{candidate.voteCount}표 ({pct}%)</span>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+              )
+            })
+          })()}
         </div>
 
         {/* 댓글 */}
