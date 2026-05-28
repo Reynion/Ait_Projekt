@@ -44,7 +44,7 @@ export default function EditPollPage() {
         title: poll.title,
         description: poll.description ?? '',
         max_votes_per_user: poll.max_votes_per_user,
-        ends_at: poll.ends_at ? poll.ends_at.split('T')[0] : '',
+        ends_at: poll.ends_at ? new Date(poll.ends_at).toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 16) : '',
         is_active: poll.is_active,
         show_results: poll.show_results ?? true,
       })
@@ -97,7 +97,7 @@ export default function EditPollPage() {
       title: form.title,
       description: form.description || null,
       max_votes_per_user: form.max_votes_per_user,
-      ends_at: form.ends_at || null,
+      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
       is_active: form.is_active,
       show_results: form.show_results,
     }).eq('id', id)
@@ -151,8 +151,8 @@ export default function EditPollPage() {
               <input type="number" min={1} required value={form.max_votes_per_user} onChange={e => setForm(p => ({ ...p, max_votes_per_user: Number(e.target.value) }))} className={inputClass} />
             </div>
             <div className="flex flex-col gap-1.5 flex-1">
-              <label className="text-sm font-medium text-zinc-300">마감일</label>
-              <input type="date" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} className={inputClass} />
+              <label className="text-sm font-medium text-zinc-300">마감 일시</label>
+              <input type="datetime-local" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} className={inputClass} />
             </div>
           </div>
 

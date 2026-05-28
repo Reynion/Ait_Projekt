@@ -80,7 +80,7 @@ export default function NewPollPage() {
       title: form.title,
       description: form.description || null,
       max_votes_per_user: form.max_votes_per_user,
-      ends_at: form.ends_at || null,
+      ends_at: form.ends_at ? new Date(form.ends_at).toISOString() : null,
       show_results: form.show_results,
       created_by: user?.id,
     }).select().single()
@@ -130,8 +130,8 @@ export default function NewPollPage() {
               <input type="number" min={1} required value={form.max_votes_per_user} onChange={e => setForm(p => ({ ...p, max_votes_per_user: Number(e.target.value) }))} className={inputClass} />
             </div>
             <div className="flex flex-col gap-1.5 flex-1">
-              <label className="text-sm font-medium text-zinc-300">마감일</label>
-              <input type="date" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} className={inputClass} />
+              <label className="text-sm font-medium text-zinc-300">마감 일시</label>
+              <input type="datetime-local" value={form.ends_at} onChange={e => setForm(p => ({ ...p, ends_at: e.target.value }))} className={inputClass} />
             </div>
           </div>
 

@@ -41,6 +41,7 @@ export default function PollDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [voting, setVoting] = useState(false)
+  const [modalYoutubeId, setModalYoutubeId] = useState<string | null>(null)
 
   async function fetchData() {
     const supabase = createClient()
@@ -49,6 +50,16 @@ export default function PollDetailPage() {
     setCurrentUserId(user.id)
 
     const { data: pollData } = await supabase.from('polls').select('*').eq('id', id).single()
+    if (!pollData) { setLoading(false); return }
+
+    // 마감 시간이 지난 투표 자동 비활성화
+    if (pollData.is_active && pollData.ends_at) {
+      const now = new Date().toISOString()
+      if (pollData.ends_at < now) {
+        await supabase.from('polls').update({ is_active: false }).eq('id', id)
+        pollData.is_active = false
+      }
+    }
     setPoll(pollData)
 
     const { data: candidatesData } = await supabase
@@ -74,7 +85,8 @@ export default function PollDetailPage() {
 
   useEffect(() => { fetchData() }, [id, router])
 
-  async function handleVote(candidateId: number) {
+  async function handleVote(e: React.MouseEvent, candidateId: number) {
+    e.stopPropagation()
     if (!poll?.is_active || voting || !currentUserId) return
     setVoting(true)
     const supabase = createClient()
@@ -139,7 +151,9 @@ export default function PollDetailPage() {
           {poll.description && <p className="text-sm text-zinc-300">{poll.description}</p>}
           <div className="flex gap-3 text-xs text-zinc-500 pt-2 border-t border-zinc-700 mt-1">
             <span>1인 최대 <span className="text-zinc-300 font-medium">{poll.max_votes_per_user}</span>표 · 현재 <span className="text-zinc-300 font-medium">{myVotes.length}</span>표 행사</span>
-            {poll.ends_at && <span>마감: {new Date(poll.ends_at).toLocaleDateString('ko-KR')}</span>}
+            {poll.ends_at && (
+              <span>마감: {new Date(poll.ends_at).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+            )}
           </div>
         </div>
 
@@ -156,14 +170,20 @@ export default function PollDetailPage() {
             return (
               <div
                 key={candidate.id}
+                onClick={() => youtubeId && setModalYoutubeId(youtubeId)}
                 className={`bg-zinc-800 rounded-xl p-4 flex flex-col gap-3 border-2 transition-all ${
                   isVoted ? 'border-blue-500 bg-blue-500/5' : 'border-zinc-700 hover:border-zinc-500'
-                }`}
+                } ${youtubeId ? 'cursor-pointer' : ''}`}
               >
                 <div className="flex gap-3 items-center">
                   {thumbnail ? (
                     <div className="relative w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
                       <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
+                      {youtubeId && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <span className="text-white text-lg">▶</span>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="w-16 h-11 sm:w-20 sm:h-14 flex-shrink-0 rounded-lg bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-500 text-xl">🎵</div>
@@ -172,10 +192,11 @@ export default function PollDetailPage() {
                     <p className="font-semibold text-white truncate">{post.title}</p>
                     {post.artist && <p className="text-xs text-zinc-400">{post.artist}</p>}
                     <p className="text-xs text-zinc-500 mt-0.5">{post.users?.nickname}</p>
+                    {youtubeId && <p className="text-xs text-zinc-500 mt-0.5">탭하면 영상 재생</p>}
                   </div>
                   {poll.is_active && (
                     <button
-                      onClick={() => handleVote(candidate.id)}
+                      onClick={e => handleVote(e, candidate.id)}
                       disabled={voting}
                       className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all disabled:opacity-50 ${
                         isVoted
@@ -211,6 +232,37 @@ export default function PollDetailPage() {
           </div>
         )}
       </section>
+
+      {/* 유튜브 모달 */}
+      {modalYoutubeId && (
+        <div
+          className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-4"
+          onClick={() => setModalYoutubeId(null)}
+        >
+          <div
+            className="w-full max-w-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2 px-1">
+              <span className="text-white/60 text-xs">배경 탭하면 닫힘</span>
+              <button
+                onClick={() => setModalYoutubeId(null)}
+                className="text-white/70 hover:text-white text-sm px-3 py-1 rounded-lg border border-white/20 hover:border-white/50 transition-colors"
+              >
+                ✕ 닫기
+              </button>
+            </div>
+            <div className="aspect-video w-full rounded-xl overflow-hidden bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${modalYoutubeId}?autoplay=1`}
+                className="w-full h-full"
+                allowFullScreen
+                allow="autoplay; encrypted-media"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

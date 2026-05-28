@@ -29,8 +29,18 @@ export default function PollsPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/login'); return }
     })
-    supabase.from('polls').select('*').order('created_at', { ascending: false }).then(({ data }) => {
-      if (data) setPolls(data)
+    supabase.from('polls').select('*').order('created_at', { ascending: false }).then(async ({ data }) => {
+      if (!data) { setLoading(false); return }
+
+      // 마감 시간이 지난 투표 자동 비활성화
+      const now = new Date().toISOString()
+      const expired = data.filter(p => p.is_active && p.ends_at && p.ends_at < now)
+      if (expired.length > 0) {
+        await supabase.from('polls').update({ is_active: false }).in('id', expired.map(p => p.id))
+        setPolls(data.map(p => expired.find(e => e.id === p.id) ? { ...p, is_active: false } : p))
+      } else {
+        setPolls(data)
+      }
       setLoading(false)
     })
   }, [router])
@@ -83,7 +93,7 @@ export default function PollsPage() {
                 {poll.description && <p className="text-sm text-zinc-300">{poll.description}</p>}
                 <div className="flex gap-3 text-xs text-zinc-500 pt-1 border-t border-zinc-700 mt-1">
                   <span>1인 최대 {poll.max_votes_per_user}표</span>
-                  {poll.ends_at && <span>마감: {new Date(poll.ends_at).toLocaleDateString('ko-KR')}</span>}
+                  {poll.ends_at && <span>마감: {new Date(poll.ends_at).toLocaleString('ko-KR', { year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
                 </div>
               </div>
             </Link>
