@@ -58,10 +58,56 @@ export default function Navbar() {
   useEffect(() => {
     if (!currentUserId) return
     const supabase = createClient()
-    function fetchNotifications() {
-      supabase.from('notifications').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false }).limit(30)
-        .then(({ data }) => { if (data) setNotifications(data as Notification[]) })
+
+    async function fetchNotifications() {
+      // 7일 이전 알림 자동 삭제
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      await supabase.from('notifications')
+        .delete()
+        .eq('user_id', currentUserId!)
+        .lt('created_at', sevenDaysAgo)
+
+      const { data } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .order('created_at', { ascending: false })
+        .limit(30)
+
+      let notis = (data ?? []) as Notification[]
+
+      // 만료된 일정 알림 추가 삭제
+      const scheduleNotis = notis.filter(n => n.link.startsWith('/schedule/'))
+      if (scheduleNotis.length > 0) {
+        const scheduleIds = scheduleNotis
+          .map(n => parseInt(n.link.split('/')[2]))
+          .filter(id => !isNaN(id))
+
+        const { data: schedules } = await supabase
+          .from('schedules')
+          .select('id, start_date, end_date')
+          .in('id', scheduleIds)
+
+        const today = new Date().toISOString().slice(0, 10)
+        const expiredIds = new Set(
+          (schedules ?? [])
+            .filter(s => (s.end_date ?? s.start_date) < today)
+            .map(s => s.id)
+        )
+
+        const toDelete = scheduleNotis
+          .filter(n => expiredIds.has(parseInt(n.link.split('/')[2])))
+          .map(n => n.id)
+
+        if (toDelete.length > 0) {
+          await supabase.from('notifications').delete().in('id', toDelete)
+          notis = notis.filter(n => !toDelete.includes(n.id))
+        }
+      }
+
+      setNotifications(notis)
     }
+
     fetchNotifications()
     const channel = supabase.channel('notifications')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUserId}` }, fetchNotifications)
@@ -87,6 +133,20 @@ export default function Navbar() {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
   }
 
+  async function deleteNotification(e: React.MouseEvent, id: number) {
+    e.stopPropagation()
+    const supabase = createClient()
+    await supabase.from('notifications').delete().eq('id', id)
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }
+
+  async function deleteAllNotifications() {
+    if (!currentUserId) return
+    const supabase = createClient()
+    await supabase.from('notifications').delete().eq('user_id', currentUserId)
+    setNotifications([])
+  }
+
   async function handleNotiClick(noti: Notification) {
     const supabase = createClient()
     if (!noti.is_read) {
@@ -99,7 +159,6 @@ export default function Navbar() {
 
   const unreadCount = notifications.filter(n => !n.is_read).length
 
-  // pathname 바뀌면 메뉴 닫기
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
   async function handleLogout() {
@@ -118,6 +177,63 @@ export default function Navbar() {
     ...NAV_ITEMS,
     ...(userInfo?.role === 'admin' ? [{ label: '관리자', href: '/admin' }] : []),
   ]
+
+  function NotiDropdown({ mobile = false }: { mobile?: boolean }) {
+    return (
+      <div className={mobile
+        ? 'fixed right-2 top-14 w-[min(18rem,calc(100vw-1rem))] bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden'
+        : 'absolute right-0 top-full mt-2 w-80 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden'
+      }>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
+          <span className="text-sm font-semibold text-white">알림</span>
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className="text-xs text-zinc-400 hover:text-white transition-colors">
+                모두 읽음
+              </button>
+            )}
+            {notifications.length > 0 && (
+              <button onClick={deleteAllNotifications} className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                전체 삭제
+              </button>
+            )}
+          </div>
+        </div>
+        <ul className={mobile ? 'max-h-72 overflow-y-auto' : 'max-h-80 overflow-y-auto'}>
+          {notifications.length === 0 && (
+            <li className="text-center text-zinc-500 text-sm py-8">알림이 없습니다.</li>
+          )}
+          {notifications.map(noti => (
+            <li
+              key={noti.id}
+              className={`flex items-start border-b border-zinc-700 last:border-0 hover:bg-zinc-700 transition-colors ${!noti.is_read ? 'bg-zinc-700/50' : ''}`}
+            >
+              <button
+                onClick={() => handleNotiClick(noti)}
+                className="flex-1 text-left px-4 py-3 flex gap-3 items-start min-w-0"
+              >
+                <span className="text-lg flex-shrink-0">
+                  {noti.type === 'comment' ? '💬' : noti.type === 'reply' ? '↩' : noti.type === 'mention' ? '@' : noti.type === 'new_poll' ? '🗳' : '📌'}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-zinc-200 leading-snug">{noti.message}</p>
+                  <p className="text-xs text-zinc-500 mt-0.5">{new Date(noti.created_at).toLocaleDateString('ko-KR')}</p>
+                </div>
+                {!noti.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1.5" />}
+              </button>
+              <button
+                onClick={e => deleteNotification(e, noti.id)}
+                className="flex-shrink-0 px-3 py-3 text-zinc-600 hover:text-red-400 transition-colors"
+                aria-label="알림 삭제"
+              >
+                ✕
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-700 bg-zinc-900">
@@ -156,7 +272,6 @@ export default function Navbar() {
 
         {/* 데스크톱 우측 */}
         <div className="hidden md:flex items-center gap-3">
-          {/* 알림 */}
           <div className="relative" ref={notiRef}>
             <button
               onClick={() => setNotiOpen(o => !o)}
@@ -172,36 +287,7 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            {notiOpen && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
-                  <span className="text-sm font-semibold text-white">알림</span>
-                  {unreadCount > 0 && (
-                    <button onClick={markAllRead} className="text-xs text-zinc-400 hover:text-white transition-colors">모두 읽음</button>
-                  )}
-                </div>
-                <ul className="max-h-80 overflow-y-auto">
-                  {notifications.length === 0 && (
-                    <li className="text-center text-zinc-500 text-sm py-8">알림이 없습니다.</li>
-                  )}
-                  {notifications.map(noti => (
-                    <li key={noti.id}>
-                      <button
-                        onClick={() => handleNotiClick(noti)}
-                        className={`w-full text-left px-4 py-3 border-b border-zinc-700 last:border-0 hover:bg-zinc-700 transition-colors flex gap-3 items-start ${!noti.is_read ? 'bg-zinc-700/50' : ''}`}
-                      >
-                        <span className="text-lg flex-shrink-0">{noti.type === 'comment' ? '💬' : noti.type === 'reply' ? '↩' : noti.type === 'mention' ? '@' : noti.type === 'new_poll' ? '🗳' : '📌'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-zinc-200 leading-snug">{noti.message}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5">{new Date(noti.created_at).toLocaleDateString('ko-KR')}</p>
-                        </div>
-                        {!noti.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {notiOpen && <NotiDropdown />}
           </div>
           {userInfo && (
             <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -240,36 +326,7 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-            {notiOpen && (
-              <div className="fixed right-2 top-14 w-[min(18rem,calc(100vw-1rem))] bg-zinc-800 border border-zinc-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700">
-                  <span className="text-sm font-semibold text-white">알림</span>
-                  {unreadCount > 0 && (
-                    <button onClick={markAllRead} className="text-xs text-zinc-400 hover:text-white transition-colors">모두 읽음</button>
-                  )}
-                </div>
-                <ul className="max-h-72 overflow-y-auto">
-                  {notifications.length === 0 && (
-                    <li className="text-center text-zinc-500 text-sm py-8">알림이 없습니다.</li>
-                  )}
-                  {notifications.map(noti => (
-                    <li key={noti.id}>
-                      <button
-                        onClick={() => handleNotiClick(noti)}
-                        className={`w-full text-left px-4 py-3 border-b border-zinc-700 last:border-0 hover:bg-zinc-700 transition-colors flex gap-3 items-start ${!noti.is_read ? 'bg-zinc-700/50' : ''}`}
-                      >
-                        <span className="text-lg flex-shrink-0">{noti.type === 'comment' ? '💬' : noti.type === 'reply' ? '↩' : noti.type === 'mention' ? '@' : noti.type === 'new_poll' ? '🗳' : '📌'}</span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-zinc-200 leading-snug">{noti.message}</p>
-                          <p className="text-xs text-zinc-500 mt-0.5">{new Date(noti.created_at).toLocaleDateString('ko-KR')}</p>
-                        </div>
-                        {!noti.is_read && <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {notiOpen && <NotiDropdown mobile />}
           </div>
           {userInfo && (
             <Link href="/profile" className="flex items-center gap-2">
