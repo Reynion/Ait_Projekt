@@ -17,6 +17,7 @@ interface PostRow {
   description: string | null
   created_at: string
   users: { nickname: string } | null
+  likes: { is_like: boolean }[]
 }
 
 export default function AdminPosts() {
@@ -30,7 +31,7 @@ export default function AdminPosts() {
     const supabase = createClient()
     const { data } = await supabase
       .from('posts')
-      .select('id, title, description, created_at, users(nickname)')
+      .select('id, title, description, created_at, users(nickname), likes(is_like)')
       .order('created_at', { ascending: false })
     if (data) setPosts(data as unknown as PostRow[])
     setLoading(false)
@@ -89,10 +90,13 @@ export default function AdminPosts() {
                 {post.description && (
                   <p className="text-zinc-500 text-xs truncate">{post.description}</p>
                 )}
-                <div className="flex gap-2 text-xs text-zinc-500 mt-0.5">
+                <div className="flex flex-wrap gap-2 text-xs text-zinc-500 mt-0.5">
                   <span className="text-zinc-400">{post.users?.nickname ?? '알 수 없음'}</span>
                   <span>·</span>
                   <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span>·</span>
+                  <span>👍 {post.likes.filter(l => l.is_like).length}</span>
+                  <span>👎 {post.likes.filter(l => !l.is_like).length}</span>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">

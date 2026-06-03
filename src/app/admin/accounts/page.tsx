@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import Image from 'next/image'
+import { validateImageFile } from '@/lib/validateUpload'
 
 interface UserRow {
   id: string
@@ -58,6 +59,8 @@ export default function AdminAccounts() {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>, userId: string) {
     const file = e.target.files?.[0]
     if (!file) return
+    const err = validateImageFile(file)
+    if (err) { alert(err); return }
     setUploading(true)
     const supabase = createClient()
     const ext = file.name.split('.').pop()

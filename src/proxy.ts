@@ -37,6 +37,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
+  if (user && request.nextUrl.pathname.startsWith('/admin')) {
+    const { data: userRow } = await supabase
+      .from('users').select('role').eq('id', user.id).single()
+    if (userRow?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
+  }
+
   return supabaseResponse
 }
 

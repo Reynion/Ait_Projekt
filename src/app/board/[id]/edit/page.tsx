@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Image from 'next/image'
+import { validateBoardFile, isImageFile, isImageUrl } from '@/lib/validateUpload'
 
 export default function EditBoardPostPage() {
   const { id } = useParams()
@@ -16,8 +17,8 @@ export default function EditBoardPostPage() {
   const [content, setContent] = useState('')
   const [isNotice, setIsNotice] = useState(false)
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([])
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([])
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([])
+  const [newFiles, setNewFiles] = useState<File[]>([])
+  const [newPreviews, setNewPreviews] = useState<(string | null)[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -51,29 +52,37 @@ export default function EditBoardPostPage() {
   }, [id, router])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    const total = existingImageUrls.length + newImageFiles.length + files.length
+    const selected = Array.from(e.target.files ?? [])
+    const total = existingImageUrls.length + newFiles.length + selected.length
     if (total > 5) {
-      setError('이미지는 최대 5장까지 첨부할 수 있습니다.')
+      setError('파일은 최대 5개까지 첨부할 수 있습니다.')
       return
     }
+    for (const file of selected) {
+      const err = validateBoardFile(file)
+      if (err) { setError(err); return }
+    }
     setError('')
-    setNewImageFiles(prev => [...prev, ...files])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = ev => setNewImagePreviews(prev => [...prev, ev.target?.result as string])
-      reader.readAsDataURL(file)
+    setNewFiles(prev => [...prev, ...selected])
+    selected.forEach(file => {
+      if (isImageFile(file)) {
+        const reader = new FileReader()
+        reader.onload = ev => setNewPreviews(prev => [...prev, ev.target?.result as string])
+        reader.readAsDataURL(file)
+      } else {
+        setNewPreviews(prev => [...prev, null])
+      }
     })
     e.target.value = ''
   }
 
-  function removeExistingImage(idx: number) {
+  function removeExistingFile(idx: number) {
     setExistingImageUrls(prev => prev.filter((_, i) => i !== idx))
   }
 
-  function removeNewImage(idx: number) {
-    setNewImageFiles(prev => prev.filter((_, i) => i !== idx))
-    setNewImagePreviews(prev => prev.filter((_, i) => i !== idx))
+  function removeNewFile(idx: number) {
+    setNewFiles(prev => prev.filter((_, i) => i !== idx))
+    setNewPreviews(prev => prev.filter((_, i) => i !== idx))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,11 +94,11 @@ export default function EditBoardPostPage() {
     const supabase = createClient()
 
     const uploadedUrls: string[] = []
-    for (const file of newImageFiles) {
+    for (const file of newFiles) {
       const ext = file.name.split('.').pop()
       const path = `${currentUserId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-      const { error: upErr } = await supabase.storage.from('board-images').upload(path, file)
-      if (upErr) { setError('이미지 업로드에 실패했습니다.'); setSaving(false); return }
+      const { error: upErr } = await supabase.storage.from('board-images').upload(path, file, { contentType: file.type || undefined })
+      if (upErr) { setError('파일 업로드에 실패했습니다.'); setSaving(false); return }
       const { data } = supabase.storage.from('board-images').getPublicUrl(path)
       uploadedUrls.push(data.publicUrl)
     }
@@ -116,7 +125,7 @@ export default function EditBoardPostPage() {
     </main>
   )
 
-  const totalImages = existingImageUrls.length + newImageFiles.length
+  const totalImages = existingImageUrls.length + newFiles.length
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
@@ -162,43 +171,47 @@ export default function EditBoardPostPage() {
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-zinc-300">이미지 <span className="text-zinc-500 font-normal">({totalImages}/5)</span></label>
+                <label className="text-sm font-medium text-zinc-300">파일 <span className="text-zinc-500 font-normal">({totalImages}/5, 이미지·PDF·GP5)</span></label>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={totalImages >= 5}
                   className="text-sm text-zinc-400 hover:text-zinc-200 border border-zinc-600 hover:border-zinc-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-40"
                 >
-                  + 이미지 추가
+                  + 파일 추가
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf,.gp5,.gpx,.gp4,.gp" multiple className="hidden" onChange={handleFileChange} />
               </div>
 
-              {(existingImageUrls.length > 0 || newImagePreviews.length > 0) && (
+              {(existingImageUrls.length > 0 || newFiles.length > 0) && (
                 <div className="flex flex-wrap gap-2">
                   {existingImageUrls.map((url, idx) => (
-                    <div key={`e-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
-                      <Image src={url} alt="" fill className="object-cover" unoptimized />
-                      <button
-                        type="button"
-                        onClick={() => removeExistingImage(idx)}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    isImageUrl(url) ? (
+                      <div key={`e-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
+                        <Image src={url} alt="" fill className="object-cover" unoptimized />
+                        <button type="button" onClick={() => removeExistingFile(idx)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
+                      </div>
+                    ) : (
+                      <div key={`e-${idx}`} className="relative flex items-center gap-2 bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 flex-shrink-0 max-w-[180px]">
+                        <span className="text-base">📄</span>
+                        <span className="text-xs text-zinc-300 truncate">{url.split('/').pop()}</span>
+                        <button type="button" onClick={() => removeExistingFile(idx)} className="ml-1 text-zinc-500 hover:text-red-400 text-xs flex-shrink-0">✕</button>
+                      </div>
+                    )
                   ))}
-                  {newImagePreviews.map((src, idx) => (
-                    <div key={`n-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-blue-600/50 flex-shrink-0">
-                      <Image src={src} alt="" fill className="object-cover" unoptimized />
-                      <button
-                        type="button"
-                        onClick={() => removeNewImage(idx)}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                  {newFiles.map((file, idx) => (
+                    newPreviews[idx] ? (
+                      <div key={`n-${idx}`} className="relative w-20 h-20 rounded-lg overflow-hidden border border-blue-600/50 flex-shrink-0">
+                        <Image src={newPreviews[idx]!} alt="" fill className="object-cover" unoptimized />
+                        <button type="button" onClick={() => removeNewFile(idx)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
+                      </div>
+                    ) : (
+                      <div key={`n-${idx}`} className="relative flex items-center gap-2 bg-zinc-700 border border-blue-600/50 rounded-lg px-3 py-2 flex-shrink-0 max-w-[180px]">
+                        <span className="text-base">📄</span>
+                        <span className="text-xs text-zinc-300 truncate">{file.name}</span>
+                        <button type="button" onClick={() => removeNewFile(idx)} className="ml-1 text-zinc-500 hover:text-red-400 text-xs flex-shrink-0">✕</button>
+                      </div>
+                    )
                   ))}
                 </div>
               )}

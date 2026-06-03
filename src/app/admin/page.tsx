@@ -7,25 +7,27 @@ import Link from 'next/link'
 interface Stats {
   users: number
   posts: number
+  board: number
   polls: number
   schedules: number
   records: number
 }
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState<Stats>({ users: 0, posts: 0, polls: 0, schedules: 0, records: 0 })
+  const [stats, setStats] = useState<Stats>({ users: 0, posts: 0, board: 0, polls: 0, schedules: 0, records: 0 })
 
   useEffect(() => {
     const supabase = createClient()
     async function fetchStats() {
-      const [u, p, po, s, r] = await Promise.all([
+      const [u, p, b, po, s, r] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('posts').select('id', { count: 'exact', head: true }),
+        supabase.from('board_posts').select('id', { count: 'exact', head: true }),
         supabase.from('polls').select('id', { count: 'exact', head: true }),
         supabase.from('schedules').select('id', { count: 'exact', head: true }),
         supabase.from('record_posts').select('id', { count: 'exact', head: true }),
       ])
-      setStats({ users: u.count ?? 0, posts: p.count ?? 0, polls: po.count ?? 0, schedules: s.count ?? 0, records: r.count ?? 0 })
+      setStats({ users: u.count ?? 0, posts: p.count ?? 0, board: b.count ?? 0, polls: po.count ?? 0, schedules: s.count ?? 0, records: r.count ?? 0 })
     }
     fetchStats()
   }, [])
@@ -33,6 +35,7 @@ export default function AdminDashboard() {
   const cards = [
     { label: '전체 계정', value: stats.users, href: '/admin/accounts', icon: '👥' },
     { label: '음악 게시글', value: stats.posts, href: '/admin/posts', icon: '🎵' },
+    { label: '게시판 글', value: stats.board, href: '/admin/board', icon: '📋' },
     { label: '투표 이벤트', value: stats.polls, href: '/admin/polls', icon: '🗳️' },
     { label: '일정', value: stats.schedules, href: '/admin/schedules', icon: '📅' },
     { label: '기록', value: stats.records, href: '/admin/records', icon: '🎬' },

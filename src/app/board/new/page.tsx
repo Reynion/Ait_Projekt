@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Image from 'next/image'
+import { validateBoardFile, isImageFile } from '@/lib/validateUpload'
 
 export default function NewBoardPostPage() {
   const router = useRouter()
@@ -14,8 +15,8 @@ export default function NewBoardPostPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isNotice, setIsNotice] = useState(false)
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [previews, setPreviews] = useState<string[]>([])
+  const [files, setFiles] = useState<File[]>([])
+  const [previews, setPreviews] = useState<(string | null)[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -30,23 +31,31 @@ export default function NewBoardPostPage() {
   }, [router])
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? [])
-    if (imageFiles.length + files.length > 5) {
-      setError('이미지는 최대 5장까지 첨부할 수 있습니다.')
+    const selected = Array.from(e.target.files ?? [])
+    if (files.length + selected.length > 5) {
+      setError('파일은 최대 5개까지 첨부할 수 있습니다.')
       return
     }
+    for (const file of selected) {
+      const err = validateBoardFile(file)
+      if (err) { setError(err); return }
+    }
     setError('')
-    setImageFiles(prev => [...prev, ...files])
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = ev => setPreviews(prev => [...prev, ev.target?.result as string])
-      reader.readAsDataURL(file)
+    setFiles(prev => [...prev, ...selected])
+    selected.forEach(file => {
+      if (isImageFile(file)) {
+        const reader = new FileReader()
+        reader.onload = ev => setPreviews(prev => [...prev, ev.target?.result as string])
+        reader.readAsDataURL(file)
+      } else {
+        setPreviews(prev => [...prev, null])
+      }
     })
     e.target.value = ''
   }
 
-  function removeImage(idx: number) {
-    setImageFiles(prev => prev.filter((_, i) => i !== idx))
+  function removeFile(idx: number) {
+    setFiles(prev => prev.filter((_, i) => i !== idx))
     setPreviews(prev => prev.filter((_, i) => i !== idx))
   }
 
@@ -59,11 +68,11 @@ export default function NewBoardPostPage() {
     const supabase = createClient()
 
     const imageUrls: string[] = []
-    for (const file of imageFiles) {
+    for (const file of files) {
       const ext = file.name.split('.').pop()
       const path = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-      const { error: upErr } = await supabase.storage.from('board-images').upload(path, file)
-      if (upErr) { setError('이미지 업로드에 실패했습니다.'); setLoading(false); return }
+      const { error: upErr } = await supabase.storage.from('board-images').upload(path, file, { contentType: file.type || undefined })
+      if (upErr) { setError('파일 업로드에 실패했습니다.'); setLoading(false); return }
       const { data } = supabase.storage.from('board-images').getPublicUrl(path)
       imageUrls.push(data.publicUrl)
     }
@@ -134,30 +143,32 @@ export default function NewBoardPostPage() {
 
             <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-zinc-300">이미지 첨부 <span className="text-zinc-500 font-normal">(최대 5장)</span></label>
+                <label className="text-sm font-medium text-zinc-300">파일 첨부 <span className="text-zinc-500 font-normal">(최대 5개, 이미지·PDF·GP5)</span></label>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={imageFiles.length >= 5}
+                  disabled={files.length >= 5}
                   className="text-sm text-zinc-400 hover:text-zinc-200 border border-zinc-600 hover:border-zinc-400 px-3 py-1 rounded-lg transition-colors disabled:opacity-40"
                 >
-                  + 이미지 추가
+                  + 파일 추가
                 </button>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileChange} />
+                <input ref={fileInputRef} type="file" accept="image/*,application/pdf,.gp5,.gpx,.gp4,.gp" multiple className="hidden" onChange={handleFileChange} />
               </div>
-              {previews.length > 0 && (
+              {files.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {previews.map((src, idx) => (
-                    <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
-                      <Image src={src} alt="" fill className="object-cover" unoptimized />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(idx)}
-                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
+                  {files.map((file, idx) => (
+                    previews[idx] ? (
+                      <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-zinc-600 flex-shrink-0">
+                        <Image src={previews[idx]!} alt="" fill className="object-cover" unoptimized />
+                        <button type="button" onClick={() => removeFile(idx)} className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/70 rounded-full text-[#ffffff] text-xs flex items-center justify-center hover:bg-red-500 transition-colors">✕</button>
+                      </div>
+                    ) : (
+                      <div key={idx} className="relative flex items-center gap-2 bg-zinc-700 border border-zinc-600 rounded-lg px-3 py-2 flex-shrink-0 max-w-[180px]">
+                        <span className="text-base">📄</span>
+                        <span className="text-xs text-zinc-300 truncate">{file.name}</span>
+                        <button type="button" onClick={() => removeFile(idx)} className="ml-1 text-zinc-500 hover:text-red-400 text-xs flex-shrink-0">✕</button>
+                      </div>
+                    )
                   ))}
                 </div>
               )}

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Image from 'next/image'
 import Link from 'next/link'
+import { validateImageFile } from '@/lib/validateUpload'
 
 export default function RecordNewPage() {
   const router = useRouter()
@@ -42,6 +43,10 @@ export default function RecordNewPage() {
     if (imageFiles.length + files.length > 5) {
       setError('이미지는 최대 5장까지 첨부할 수 있습니다.')
       return
+    }
+    for (const file of files) {
+      const err = validateImageFile(file)
+      if (err) { setError(err); return }
     }
     setError('')
     setImageFiles(prev => [...prev, ...files])
