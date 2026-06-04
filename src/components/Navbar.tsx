@@ -247,7 +247,7 @@ export default function Navbar() {
             alt="Ait"
             height={32}
             width={120}
-            className="h-8 w-auto object-contain"
+            className={`h-8 w-auto object-contain ${theme === 'light' ? 'mix-blend-multiply' : 'mix-blend-screen'}`}
             priority
           />
         </Link>
