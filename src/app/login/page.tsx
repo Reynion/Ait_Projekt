@@ -31,29 +31,29 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-900">
-      <div className="w-full max-w-sm bg-white dark:bg-zinc-800 rounded-2xl shadow-md p-8">
-        <h1 className="text-2xl font-bold text-center mb-6">Ait 놀이터 로그인</h1>
+    <main className="flex min-h-screen items-center justify-center bg-zinc-950">
+      <div className="w-full max-w-sm bg-zinc-800 border border-zinc-700 rounded-2xl p-8">
+        <h1 className="text-2xl font-bold text-center mb-6 text-white">Ait 놀이터 로그인</h1>
         <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">이메일</label>
+            <label className="text-sm font-medium text-zinc-300">이메일</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600"
+              className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
               placeholder="example@email.com"
             />
           </div>
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">비밀번호</label>
+            <label className="text-sm font-medium text-zinc-300">비밀번호</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 dark:bg-zinc-700 dark:border-zinc-600"
+              className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
               placeholder="비밀번호 입력"
             />
           </div>
@@ -61,14 +61,14 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="bg-zinc-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-zinc-700 disabled:opacity-50 transition-colors dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+            className="bg-zinc-100 text-zinc-900 rounded-lg py-2 text-sm font-medium hover:bg-white disabled:opacity-50 transition-colors"
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
         <p className="text-center text-sm text-zinc-500 mt-4">
           우리 밴드는 처음이니?{' '}
-          <Link href="/signup" className="text-zinc-700 dark:text-zinc-300 hover:underline transition-colors">회원가입</Link>
+          <Link href="/signup" className="text-zinc-400 hover:text-white hover:underline transition-colors">회원가입</Link>
         </p>
       </div>
     </main>
