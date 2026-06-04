@@ -243,11 +243,11 @@ export default function Navbar() {
         {/* 로고 */}
         <Link href="/" className="flex-shrink-0">
           <Image
-            src={theme === 'light' ? '/logo_wt.png' : '/logo_bk.png'}
+            src={theme === 'light' ? '/logo_wtt.png' : '/logo_bkt.png'}
             alt="Ait"
             height={32}
             width={120}
-            className={`h-8 w-auto object-contain ${theme === 'light' ? 'mix-blend-multiply' : 'mix-blend-screen'}`}
+            className="h-8 w-auto object-contain"
             priority
           />
         </Link>
