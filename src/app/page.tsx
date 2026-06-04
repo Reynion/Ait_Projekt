@@ -37,6 +37,10 @@ export default function Home() {
       return
     }
 
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {})
+    }
+
     const handler = (e: Event) => {
       e.preventDefault()
       setInstallPrompt(e as BeforeInstallPromptEvent)
