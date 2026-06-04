@@ -31,5 +31,11 @@ export function useFCMToken(userId: string | null) {
     }
 
     registerToken()
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') registerToken()
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [userId])
 }
