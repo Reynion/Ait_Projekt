@@ -74,28 +74,46 @@ function ScheduleNewForm() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 bg-zinc-800 border border-zinc-700 rounded-xl p-5">
           {isAdmin && (
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, type: 'personal' }))}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    form.type === 'personal'
+                      ? 'bg-green-600 border-green-500 text-[#ffffff]'
+                      : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  개인 일정
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm(f => ({ ...f, type: 'official' }))}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
+                    form.type === 'official'
+                      ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
+                      : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  공식 일정
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => setForm(f => ({ ...f, type: 'personal' }))}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
-                  form.type === 'personal'
-                    ? 'bg-green-600 border-green-500 text-[#ffffff]'
-                    : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
-                }`}
+                onClick={() => setForm(f => ({
+                  ...f,
+                  title: '합주실',
+                  description: '정기합주',
+                  start_time: '19:30',
+                  end_date: f.start_date,
+                  end_time: '21:30',
+                  type: 'official',
+                  location: '뮤직원',
+                }))}
+                className="w-full py-2 rounded-lg text-sm font-medium border border-amber-700/50 bg-amber-900/20 text-amber-400 hover:bg-amber-900/40 hover:border-amber-600 transition-all"
               >
-                개인 일정
-              </button>
-              <button
-                type="button"
-                onClick={() => setForm(f => ({ ...f, type: 'official' }))}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
-                  form.type === 'official'
-                    ? 'bg-blue-600 border-blue-500 text-[#ffffff]'
-                    : 'bg-zinc-700 border-zinc-600 text-zinc-400 hover:text-white'
-                }`}
-              >
-                공식 일정
+                🎸 합주실 템플릿 적용
               </button>
             </div>
           )}
