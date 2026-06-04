@@ -39,6 +39,7 @@ export default function Home() {
     }
 
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
       navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {})
     }
 
