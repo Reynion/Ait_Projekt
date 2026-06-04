@@ -16,8 +16,8 @@ messaging.onBackgroundMessage(payload => {
   const { title, body, icon } = payload.notification ?? {}
   self.registration.showNotification(title ?? 'Ait 놀이터', {
     body: body ?? '',
-    icon: icon ?? '/og-image.png',
-    badge: '/og-image.png',
+    icon: icon ?? '/icon.png',
+    badge: '/icon.png',
     data: payload.data,
   })
 })
