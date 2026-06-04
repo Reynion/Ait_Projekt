@@ -95,3 +95,7 @@ html.light input[type="date"]::-webkit-calendar-picker-indicator:hover,
 html.light input[type="time"]::-webkit-calendar-picker-indicator:hover {
   opacity: 0.8;
 }
+
+@keyframes rainbow-spin {
+  to { transform: rotate(360deg); }
+}

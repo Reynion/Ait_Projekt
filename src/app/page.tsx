@@ -121,6 +121,8 @@ export default function Home() {
 
   if (loading) return null
 
+  const hasActivePoll = recentPolls.some(p => p.is_active)
+
   const cards = [
     { href: '/posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
     { href: '/board', icon: '📋', title: '게시판', desc: '공지사항 등 자유롭게 소통해요.' },
@@ -185,19 +187,31 @@ export default function Home() {
 
         {/* 카드 6개 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-          {cards.map(card => (
-            <Link
-              key={card.href}
-              href={card.href}
-              className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col gap-3 hover:border-zinc-500 hover:bg-zinc-750 transition-all group"
-            >
-              <span className="text-4xl">{card.icon}</span>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-semibold text-white">{card.title}</h2>
-                <p className="text-sm text-zinc-400 leading-relaxed">{card.desc}</p>
-              </div>
-            </Link>
-          ))}
+          {cards.map(card => {
+            const isRainbow = card.href === '/polls' && hasActivePoll
+            const inner = (
+              <Link
+                key={card.href}
+                href={card.href}
+                className={`flex flex-col gap-3 p-6 transition-all group ${isRainbow ? 'bg-zinc-800 rounded-[10px] relative z-10 hover:bg-zinc-700/80' : 'bg-zinc-800 border border-zinc-700 rounded-xl hover:border-zinc-500 hover:bg-zinc-750'}`}
+              >
+                <span className="text-4xl">{card.icon}</span>
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-semibold text-white">{card.title}</h2>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{card.desc}</p>
+                </div>
+              </Link>
+            )
+            if (isRainbow) {
+              return (
+                <div key={card.href} className="relative p-[2px] rounded-xl overflow-hidden">
+                  <div className="absolute inset-[-50%] bg-[conic-gradient(from_0deg,#ff0000,#ff7700,#ffff00,#00ff00,#0088ff,#8800ff,#ff0000)] [animation:rainbow-spin_3s_linear_infinite]" />
+                  {inner}
+                </div>
+              )
+            }
+            return inner
+          })}
 
           {!isInstalled && (
             <div className="flex flex-col gap-0">
