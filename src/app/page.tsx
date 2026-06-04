@@ -42,6 +42,7 @@ export default function Home() {
   const [recentPolls, setRecentPolls] = useState<RecentItem[]>([])
   const [recentSchedules, setRecentSchedules] = useState<RecentItem[]>([])
   const [recentRecords, setRecentRecords] = useState<RecentItem[]>([])
+  const [hasActivePoll, setHasActivePoll] = useState(false)
 
   useFCMToken(userId)
   useLastSeen(userId)
@@ -76,6 +77,7 @@ export default function Home() {
       setRecentPolls((pollsData ?? []) as RecentItem[])
       setRecentSchedules(((schedulesData ?? []) as unknown[]).map((p: unknown) => { const x = p as { id: number; title: string; start_date: string }; return { id: x.id, title: x.title, start_date: x.start_date } }))
       setRecentRecords(((recordsData ?? []) as unknown[]).map((p: unknown) => { const x = p as { id: number; title: string; created_at: string; users: { nickname: string } | null }; return { id: x.id, title: x.title, created_at: x.created_at, nickname: x.users?.nickname } }))
+      setHasActivePoll((activePollCount ?? 0) > 0)
       setLoading(false)
     })
   }, [router])
@@ -122,8 +124,6 @@ export default function Home() {
   }
 
   if (loading) return null
-
-  const hasActivePoll = (activePollCount ?? 0) > 0
 
   const cards = [
     { href: '/posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
