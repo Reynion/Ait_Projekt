@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Image from 'next/image'
 import { validateBoardFile, isImageFile } from '@/lib/validateUpload'
+import { notifyAll } from '@/lib/notifications'
 
 export default function NewBoardPostPage() {
   const router = useRouter()
@@ -77,18 +78,22 @@ export default function NewBoardPostPage() {
       imageUrls.push(data.publicUrl)
     }
 
-    const { error } = await supabase.from('board_posts').insert({
+    const { data: inserted, error } = await supabase.from('board_posts').insert({
       user_id: userId,
       title,
       content,
       image_urls: imageUrls,
       is_notice: isAdmin && isNotice,
-    })
+    }).select('id').single()
 
     if (error) {
       setError('저장에 실패했습니다. 다시 시도해주세요.')
       setLoading(false)
       return
+    }
+
+    if (isAdmin && isNotice && inserted) {
+      await notifyAll({ supabase, senderId: userId, type: 'new_notice', message: `새 공지가 등록됐습니다: ${title}`, link: `/board/${inserted.id}` })
     }
 
     router.push('/board')
