@@ -57,6 +57,7 @@ export default function Home() {
         { data: postsData },
         { data: boardData },
         { data: pollsData },
+        { count: activePollCount },
         { data: schedulesData },
         { data: recordsData },
       ] = await Promise.all([
@@ -64,6 +65,7 @@ export default function Home() {
         supabase.from('posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('board_posts').select('id, title, created_at, users(nickname)').eq('is_notice', false).is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('polls').select('id, title, is_active').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('polls').select('id', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),
         supabase.from('schedules').select('id, title, start_date').is('deleted_at', null).order('start_date', { ascending: true }).gte('start_date', new Date().toISOString().slice(0, 10)).limit(3),
         supabase.from('record_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('record_date', { ascending: false }).limit(3),
       ])
@@ -121,7 +123,7 @@ export default function Home() {
 
   if (loading) return null
 
-  const hasActivePoll = recentPolls.some(p => p.is_active)
+  const hasActivePoll = (activePollCount ?? 0) > 0
 
   const cards = [
     { href: '/posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
