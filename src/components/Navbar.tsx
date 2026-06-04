@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface UserInfo {
   nickname: string
@@ -158,6 +159,7 @@ export default function Navbar() {
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length
+  const { theme } = useTheme()
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
@@ -239,7 +241,16 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 border-b border-zinc-700 bg-zinc-900">
       <div className="flex items-center justify-between px-4 py-3">
         {/* 로고 */}
-        <Link href="/" className="text-lg font-bold text-white flex-shrink-0">🎸 Ait</Link>
+        <Link href="/" className="flex-shrink-0">
+          <Image
+            src={theme === 'light' ? '/logo_wt.png' : '/logo_bk.png'}
+            alt="Ait"
+            height={32}
+            width={120}
+            className="h-8 w-auto object-contain"
+            priority
+          />
+        </Link>
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden md:flex items-center gap-1">
