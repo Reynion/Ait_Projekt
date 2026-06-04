@@ -15,6 +15,7 @@ interface Post {
   created_at: string
   users: { nickname: string; avatar_url: string | null } | null
   likeCount: number
+  commentCount: number
 }
 
 type SortType = 'latest' | 'likes'
@@ -83,9 +84,14 @@ export default function PostList() {
       .from('likes')
       .select('post_id, is_like')
 
+    const { data: commentsData } = await supabase
+      .from('comments')
+      .select('post_id')
+
     const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(post => ({
       ...post,
       likeCount: (likesData ?? []).filter(l => l.post_id === post.id && l.is_like).length,
+      commentCount: (commentsData ?? []).filter(c => c.post_id === post.id).length,
     }))
 
     setPosts(enriched)
@@ -99,6 +105,7 @@ export default function PostList() {
       .channel('posts-list')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchPosts)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchPosts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, fetchPosts)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
@@ -247,7 +254,8 @@ export default function PostList() {
                   <span className="text-xs text-zinc-300 font-medium truncate max-w-[5rem] sm:max-w-none">{post.users?.nickname ?? '알 수 없음'}</span>
                   <span className="text-zinc-600 flex-shrink-0">·</span>
                   <span className="text-xs text-zinc-500 flex-shrink-0">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                  <span className="text-xs text-zinc-400 ml-auto flex-shrink-0 font-medium">👍 {post.likeCount}</span>
+                  <span className="text-xs text-zinc-500 ml-auto flex-shrink-0">💬 {post.commentCount}</span>
+                  <span className="text-xs text-zinc-400 flex-shrink-0 font-medium">👍 {post.likeCount}</span>
                 </div>
               </div>
             </li>
