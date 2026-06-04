@@ -21,11 +21,11 @@ export default function AdminDashboard() {
     async function fetchStats() {
       const [u, p, b, po, s, r] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('posts').select('id', { count: 'exact', head: true }),
-        supabase.from('board_posts').select('id', { count: 'exact', head: true }),
-        supabase.from('polls').select('id', { count: 'exact', head: true }),
-        supabase.from('schedules').select('id', { count: 'exact', head: true }),
-        supabase.from('record_posts').select('id', { count: 'exact', head: true }),
+        supabase.from('posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('board_posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('polls').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('schedules').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('record_posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
       ])
       setStats({ users: u.count ?? 0, posts: p.count ?? 0, board: b.count ?? 0, polls: po.count ?? 0, schedules: s.count ?? 0, records: r.count ?? 0 })
     }
