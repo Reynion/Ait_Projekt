@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
   if (validTokens.length === 0) return NextResponse.json({ ok: true, sent: 0 })
 
   try {
+    console.log('[push] tokens:', validTokens.length, 'title:', title)
     const response = await admin.messaging().sendEachForMulticast({
       tokens: validTokens,
       notification: { title, body },
@@ -29,9 +30,13 @@ export async function POST(req: NextRequest) {
         fcmOptions: { link: link ?? '/' },
       },
     })
-
+    console.log('[push] success:', response.successCount, 'fail:', response.failureCount)
+    response.responses.forEach((r, i) => {
+      if (!r.success) console.log(`[push] token[${i}] error:`, r.error?.code, r.error?.message)
+    })
     return NextResponse.json({ ok: true, sent: response.successCount })
-  } catch {
+  } catch (e) {
+    console.error('[push] error:', e)
     return NextResponse.json({ ok: false }, { status: 500 })
   }
 }
