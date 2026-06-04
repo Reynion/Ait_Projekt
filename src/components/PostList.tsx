@@ -78,6 +78,7 @@ export default function PostList() {
     const { data: postsData } = await supabase
       .from('posts')
       .select('*, users(nickname, avatar_url)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
     const { data: likesData } = await supabase

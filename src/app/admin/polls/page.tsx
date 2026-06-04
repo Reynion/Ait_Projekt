@@ -20,7 +20,7 @@ export default function AdminPolls() {
 
   async function fetchPolls() {
     const supabase = createClient()
-    const { data } = await supabase.from('polls').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase.from('polls').select('*').is('deleted_at', null).order('created_at', { ascending: false })
     if (data) setPolls(data)
     setLoading(false)
   }
@@ -36,7 +36,7 @@ export default function AdminPolls() {
   async function handleDelete(id: number) {
     if (!confirm('투표를 삭제하면 모든 투표 기록이 사라집니다. 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('polls').delete().eq('id', id)
+    await supabase.from('polls').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     setPolls(prev => prev.filter(p => p.id !== id))
   }
 

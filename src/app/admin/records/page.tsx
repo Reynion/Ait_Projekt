@@ -30,6 +30,7 @@ export default function AdminRecords() {
     const { data } = await supabase
       .from('record_posts')
       .select('id, title, record_date, location, record_type, created_at, users(nickname)')
+      .is('deleted_at', null)
       .order('record_date', { ascending: false })
     if (data) setRecords(data as unknown as RecordPost[])
     setLoading(false)
@@ -40,7 +41,7 @@ export default function AdminRecords() {
   async function handleDelete(id: number) {
     if (!confirm('기록을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    const { error } = await supabase.from('record_posts').delete().eq('id', id)
+    const { error } = await supabase.from('record_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) { alert('삭제에 실패했습니다.'); return }
     setRecords(prev => prev.filter(r => r.id !== id))
   }

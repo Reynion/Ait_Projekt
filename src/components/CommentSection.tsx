@@ -67,6 +67,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
       .from('comments')
       .select('*, users(nickname, avatar_url)')
       .eq('post_id', postId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true })
     if (data) setComments(data as unknown as Comment[])
   }
@@ -126,7 +127,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
 
   async function handleDelete(commentId: number) {
     const supabase = createClient()
-    const { error } = await supabase.from('comments').delete().eq('id', commentId)
+    const { error } = await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     if (!error) fetchComments()
   }
 

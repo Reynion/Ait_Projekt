@@ -48,6 +48,7 @@ export default function AdminPostDetailPage() {
         .from('comments')
         .select('id, content, created_at, parent_id, users(nickname)')
         .eq('post_id', id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: true })
       setComments((commentData ?? []) as unknown as Comment[])
       setLoading(false)
@@ -58,14 +59,14 @@ export default function AdminPostDetailPage() {
   async function handleDeleteComment(commentId: number) {
     if (!confirm('댓글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('comments').delete().eq('id', commentId)
+    await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
   }
 
   async function handleDeletePost() {
     if (!post || !confirm('게시글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').delete().eq('id', post.id)
+    await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id)
     router.push('/admin/posts')
   }
 

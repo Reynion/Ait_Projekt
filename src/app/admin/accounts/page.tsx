@@ -13,6 +13,7 @@ interface UserRow {
   avatar_url: string | null
   role: string
   created_at: string
+  last_seen_at: string | null
 }
 
 export default function AdminAccounts() {
@@ -29,7 +30,7 @@ export default function AdminAccounts() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, nickname, email, phone, avatar_url, role, created_at')
+      .select('id, nickname, email, phone, avatar_url, role, created_at, last_seen_at')
       .order('created_at', { ascending: false })
     if (data) setUsers(data as UserRow[])
     setLoading(false)
@@ -127,6 +128,11 @@ export default function AdminAccounts() {
                   <span className="text-xs text-zinc-500 truncate">{user.email}</span>
                   {user.phone && <span className="text-xs text-zinc-500">{user.phone}</span>}
                   <span className="text-xs text-zinc-600">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
+                  <span className="text-xs text-zinc-500">
+                    최근 접속: {user.last_seen_at
+                      ? new Date(user.last_seen_at).toLocaleString('ko-KR')
+                      : '기록 없음'}
+                  </span>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">

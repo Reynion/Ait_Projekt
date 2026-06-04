@@ -62,6 +62,7 @@ export default function RecordsPage() {
       .from('record_posts')
       .select('*, users(nickname, avatar_url)')
       .eq('is_notice', true)
+      .is('deleted_at', null)
       .order('record_date', { ascending: false })
     if (noticeData) setNotices(noticeData as unknown as RecordPost[])
 
@@ -71,6 +72,7 @@ export default function RecordsPage() {
       .from('record_posts')
       .select('*, users(nickname, avatar_url)', { count: 'exact' })
       .eq('is_notice', false)
+      .is('deleted_at', null)
       .order('record_date', { ascending: false })
       .range(from, to)
     if (data) setPosts(data as unknown as RecordPost[])

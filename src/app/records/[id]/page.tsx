@@ -62,8 +62,8 @@ export default function RecordDetailPage() {
 
       const numId = Number(id)
       const [{ data: prev }, { data: next }] = await Promise.all([
-        supabase.from('record_posts').select('id, title').eq('is_notice', false).lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('record_posts').select('id, title').eq('is_notice', false).gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
+        supabase.from('record_posts').select('id, title').eq('is_notice', false).is('deleted_at', null).lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('record_posts').select('id, title').eq('is_notice', false).is('deleted_at', null).gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
       ])
       if (prev) setPrevPost(prev)
       if (next) setNextPost(next)
@@ -75,7 +75,7 @@ export default function RecordDetailPage() {
   async function handleDelete() {
     if (!confirm('기록을 삭제할까요?')) return
     const supabase = createClient()
-    const { error } = await supabase.from('record_posts').delete().eq('id', id)
+    const { error } = await supabase.from('record_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) { alert('삭제에 실패했습니다.'); return }
     router.push('/records')
   }

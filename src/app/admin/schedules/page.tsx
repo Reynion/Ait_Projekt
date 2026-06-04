@@ -26,6 +26,7 @@ export default function AdminSchedules() {
     const { data } = await supabase
       .from('schedules')
       .select('*, users(nickname)')
+      .is('deleted_at', null)
       .order('start_date', { ascending: false })
     if (data) setSchedules(data as unknown as Schedule[])
     setLoading(false)
@@ -36,7 +37,7 @@ export default function AdminSchedules() {
   async function handleDelete(id: number) {
     if (!confirm('일정을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('schedules').delete().eq('id', id)
+    await supabase.from('schedules').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     setSchedules(prev => prev.filter(s => s.id !== id))
   }
 

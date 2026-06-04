@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { useFCMToken } from '@/hooks/useFCMToken'
+import { useLastSeen } from '@/hooks/useLastSeen'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -22,6 +23,7 @@ export default function Home() {
   const [showGuide, setShowGuide] = useState(false)
 
   useFCMToken(userId)
+  useLastSeen(userId)
 
   useEffect(() => {
     const supabase = createClient()

@@ -32,6 +32,7 @@ export default function AdminPosts() {
     const { data } = await supabase
       .from('posts')
       .select('id, title, description, created_at, users(nickname), likes(is_like)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
     if (data) setPosts(data as unknown as PostRow[])
     setLoading(false)
@@ -51,6 +52,7 @@ export default function AdminPosts() {
       .from('comments')
       .select('id, content, created_at, users(nickname)')
       .eq('post_id', postId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true })
     setComments(prev => ({ ...prev, [postId]: (data ?? []) as unknown as Comment[] }))
     setLoadingComments(null)
@@ -59,7 +61,7 @@ export default function AdminPosts() {
   async function handleDeleteComment(postId: number, commentId: number) {
     if (!confirm('댓글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('comments').delete().eq('id', commentId)
+    await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     setComments(prev => ({
       ...prev,
       [postId]: prev[postId].filter(c => c.id !== commentId),
@@ -69,7 +71,7 @@ export default function AdminPosts() {
   async function handleDeletePost(id: number) {
     if (!confirm('정말 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').delete().eq('id', id)
+    await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     setPosts(prev => prev.filter(p => p.id !== id))
     if (expanded === id) setExpanded(null)
   }

@@ -29,7 +29,7 @@ export default function PollsPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) { router.push('/login'); return }
     })
-    supabase.from('polls').select('*').order('created_at', { ascending: false }).then(async ({ data }) => {
+    supabase.from('polls').select('*').is('deleted_at', null).order('created_at', { ascending: false }).then(async ({ data }) => {
       if (!data) { setLoading(false); return }
 
       // 마감 시간이 지난 투표 자동 비활성화

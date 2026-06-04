@@ -63,11 +63,13 @@ export default function BoardPage() {
       const { data: postsData } = await supabase
         .from('board_posts')
         .select('*, users(nickname, avatar_url)')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
       const { data: commentsData } = await supabase
         .from('board_comments')
         .select('board_post_id')
+        .is('deleted_at', null)
 
       const enriched = ((postsData ?? []) as unknown as BoardPost[]).map(post => ({
         ...post,

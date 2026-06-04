@@ -49,7 +49,7 @@ export default function PollDetailPage() {
     if (!user) { router.push('/login'); return }
     setCurrentUserId(user.id)
 
-    const { data: pollData } = await supabase.from('polls').select('*').eq('id', id).single()
+    const { data: pollData } = await supabase.from('polls').select('*').eq('id', id).is('deleted_at', null).maybeSingle()
     if (!pollData) { setLoading(false); return }
 
     // 마감 시간이 지난 투표 자동 비활성화

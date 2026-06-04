@@ -32,10 +32,12 @@ export default function AdminBoardPage() {
     const { data: postsData } = await supabase
       .from('board_posts')
       .select('*, users(nickname)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
     const { data: commentsData } = await supabase
       .from('board_comments')
       .select('*, users(nickname)')
+      .is('deleted_at', null)
       .order('created_at', { ascending: true })
     setPosts((postsData ?? []) as unknown as BoardPost[])
     setComments((commentsData ?? []) as unknown as BoardComment[])
@@ -45,18 +47,17 @@ export default function AdminBoardPage() {
   useEffect(() => { fetchData() }, [])
 
   async function handleDeletePost(id: number) {
-    if (!confirm('게시글과 댓글이 모두 삭제됩니다. 삭제하시겠습니까?')) return
+    if (!confirm('게시글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    const { error } = await supabase.from('board_posts').delete().eq('id', id)
+    const { error } = await supabase.from('board_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) { alert('삭제에 실패했습니다.'); return }
     setPosts(prev => prev.filter(p => p.id !== id))
-    setComments(prev => prev.filter(c => c.board_post_id !== id))
     if (openPostId === id) setOpenPostId(null)
   }
 
   async function handleDeleteComment(id: number) {
     const supabase = createClient()
-    const { error } = await supabase.from('board_comments').delete().eq('id', id)
+    const { error } = await supabase.from('board_comments').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     if (error) { alert('삭제에 실패했습니다.'); return }
     setComments(prev => prev.filter(c => c.id !== id))
   }
