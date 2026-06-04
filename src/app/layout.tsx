@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://ait-projekt-alpha.vercel.app"),
   title: "🎸 Ait 놀이터",
   description: "락 밴드 Ait의 커뮤니티 공간",
+  manifest: "/manifest.json",
   openGraph: {
     title: "🎸 Ait 놀이터",
     description: "락 밴드 Ait의 커뮤니티 공간",

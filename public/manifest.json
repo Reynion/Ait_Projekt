@@ -1,0 +1,18 @@
+{
+  "name": "Ait 놀이터",
+  "short_name": "Ait",
+  "description": "락 밴드 Ait의 커뮤니티 공간",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090b",
+  "theme_color": "#09090b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/og-image.png",
+      "sizes": "any",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

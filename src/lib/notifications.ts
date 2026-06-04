@@ -1,5 +1,14 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
+async function sendPush(tokens: string[], title: string, body: string, link: string) {
+  if (tokens.length === 0) return
+  await fetch('/api/push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tokens, title, body, link }),
+  })
+}
+
 export async function notifyComment({
   supabase,
   senderId,
@@ -56,9 +65,20 @@ export async function notifyComment({
     }
   }
 
-  if (notifications.length > 0) {
-    await supabase.from('notifications').insert(notifications)
-  }
+  if (notifications.length === 0) return
+
+  await supabase.from('notifications').insert(notifications)
+
+  const userIds = notifications.map(n => n.user_id)
+  const { data: tokenRows } = await supabase
+    .from('users')
+    .select('fcm_token')
+    .in('id', userIds)
+    .not('fcm_token', 'is', null)
+
+  const tokens = (tokenRows ?? []).map(r => r.fcm_token).filter(Boolean)
+  const firstNotif = notifications[0]
+  await sendPush(tokens, 'Ait 놀이터', firstNotif.message, link)
 }
 
 export async function notifyAll({
@@ -76,10 +96,14 @@ export async function notifyAll({
 }) {
   const { data: users } = await supabase
     .from('users')
-    .select('id')
+    .select('id, fcm_token')
     .neq('id', senderId)
   if (!users || users.length === 0) return
+
   await supabase.from('notifications').insert(
     users.map(u => ({ user_id: u.id, type, message, link }))
   )
+
+  const tokens = users.map(u => u.fcm_token).filter(Boolean)
+  await sendPush(tokens, 'Ait 놀이터', message, link)
 }
