@@ -74,7 +74,7 @@ export default function PollStatsPage() {
   const maxVotes = Math.max(...candidates.map(c => c.voters.length), 1)
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <Link href="/admin/polls" className="text-zinc-500 hover:text-zinc-200 transition-colors text-sm">← 투표 관리</Link>
         <h1 className="text-2xl font-bold text-white">투표 현황</h1>

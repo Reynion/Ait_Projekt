@@ -124,7 +124,7 @@ export default function EditPollPage() {
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
   return (
-    <div className="flex flex-col gap-6 max-w-2xl">
+    <div className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
         <button onClick={() => router.push('/admin/polls')} className="text-zinc-500 hover:text-zinc-200 transition-colors text-sm">← 투표 관리</button>
         <h1 className="text-2xl font-bold text-white">투표 수정</h1>

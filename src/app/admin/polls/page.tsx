@@ -58,7 +58,7 @@ export default function AdminPolls() {
           </div>
         )}
         {polls.map((poll) => (
-          <div key={poll.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex items-center justify-between gap-4 hover:border-zinc-600 transition-colors">
+          <div key={poll.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-zinc-600 transition-colors">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-zinc-100 truncate">{poll.title}</span>
