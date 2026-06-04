@@ -135,19 +135,21 @@ export default function NewPollPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="text-sm font-medium text-zinc-300">현황 공개</label>
-            <button
-              type="button"
-              onClick={() => setForm(p => ({ ...p, show_results: !p.show_results }))}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                form.show_results
-                  ? 'bg-blue-500/10 border-blue-500/40 text-blue-400'
-                  : 'bg-zinc-700 border-zinc-600 text-zinc-400'
-              }`}
-            >
-              {form.show_results ? '공개' : '비공개'}
-            </button>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-zinc-300">현황 공개</label>
+              <button
+                type="button"
+                onClick={() => setForm(p => ({ ...p, show_results: !p.show_results }))}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                  form.show_results
+                    ? 'bg-blue-500/10 border-blue-500/40 text-blue-400'
+                    : 'bg-zinc-700 border-zinc-600 text-zinc-400'
+                }`}
+              >
+                {form.show_results ? '공개' : '비공개'}
+              </button>
+            </div>
             <span className="text-xs text-zinc-500">{form.show_results ? '멤버에게 실시간 득표 현황이 표시됩니다.' : '멤버에게 득표 현황이 숨겨집니다.'}</span>
           </div>
         </section>
