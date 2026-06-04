@@ -159,26 +159,28 @@ export default function NewPollPage() {
             <span className="text-sm text-zinc-400">{selectedPostIds.length}곡 선택됨</span>
           </div>
 
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && applySearch()}
-              placeholder="곡 제목 / 아티스트 검색..."
-              className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
-            />
-            <button
-              type="button"
-              onClick={applySearch}
-              className="bg-zinc-700 border border-zinc-600 text-zinc-200 text-sm px-3 py-2 rounded-lg hover:bg-zinc-600 transition-colors"
-            >
-              검색
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && applySearch()}
+                placeholder="곡 제목 / 아티스트 검색..."
+                className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+              />
+              <button
+                type="button"
+                onClick={applySearch}
+                className="bg-zinc-700 border border-zinc-600 text-zinc-200 text-sm px-3 py-2 rounded-lg hover:bg-zinc-600 transition-colors flex-shrink-0"
+              >
+                검색
+              </button>
+            </div>
             <select
               value={selectedMember}
               onChange={e => setSelectedMember(e.target.value)}
-              className="bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
+              className="w-full bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
             >
               <option value="all">전체 멤버</option>
               {members.map(m => <option key={m} value={m}>{m}</option>)}
