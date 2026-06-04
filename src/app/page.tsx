@@ -19,6 +19,7 @@ export default function Home() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null)
   const [isInstalled, setIsInstalled] = useState(false)
   const [installing, setInstalling] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
 
   useFCMToken(userId)
 
@@ -50,48 +51,43 @@ export default function Home() {
   }, [])
 
   async function handleInstall() {
-    if (!installPrompt) return
-    setInstalling(true)
-    await installPrompt.prompt()
-    const { outcome } = await installPrompt.userChoice
-    if (outcome === 'accepted') setIsInstalled(true)
-    setInstallPrompt(null)
-    setInstalling(false)
+    if (installPrompt) {
+      setInstalling(true)
+      await installPrompt.prompt()
+      const { outcome } = await installPrompt.userChoice
+      if (outcome === 'accepted') setIsInstalled(true)
+      setInstallPrompt(null)
+      setInstalling(false)
+    } else {
+      setShowGuide(g => !g)
+    }
+  }
+
+  function getGuideSteps() {
+    const ua = navigator.userAgent
+    const isIOS = /iPad|iPhone|iPod/.test(ua)
+    if (isIOS) {
+      return [
+        '하단 공유 버튼(□↑)을 탭해요.',
+        '"홈 화면에 추가"를 선택해요.',
+        '"추가"를 탭하면 완료!',
+      ]
+    }
+    return [
+      '브라우저 우측 상단 메뉴(⋮)를 탭해요.',
+      '"홈 화면에 추가" 또는 "앱 설치"를 선택해요.',
+      '확인하면 완료!',
+    ]
   }
 
   if (loading) return null
 
   const cards = [
-    {
-      href: '/posts',
-      icon: '🎵',
-      title: '음악 제안',
-      desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.',
-    },
-    {
-      href: '/board',
-      icon: '📋',
-      title: '게시판',
-      desc: '공지사항 등 자유롭게 소통해요.',
-    },
-    {
-      href: '/polls',
-      icon: '🗳️',
-      title: '투표',
-      desc: '다음 공연 연습곡을 투표로 결정해요.',
-    },
-    {
-      href: '/schedule',
-      icon: '📅',
-      title: '일정',
-      desc: '밴드 일정을 달력으로 한눈에 확인해요.',
-    },
-    {
-      href: '/records',
-      icon: '🎬',
-      title: '기록',
-      desc: '공연과 연습의 소중한 순간을 기록해요.',
-    },
+    { href: '/posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
+    { href: '/board', icon: '📋', title: '게시판', desc: '공지사항 등 자유롭게 소통해요.' },
+    { href: '/polls', icon: '🗳️', title: '투표', desc: '다음 공연 연습곡을 투표로 결정해요.' },
+    { href: '/schedule', icon: '📅', title: '일정', desc: '밴드 일정을 달력으로 한눈에 확인해요.' },
+    { href: '/records', icon: '🎬', title: '기록', desc: '공연과 연습의 소중한 순간을 기록해요.' },
   ]
 
   return (
@@ -120,23 +116,34 @@ export default function Home() {
           ))}
 
           {!isInstalled && (
-            <button
-              onClick={handleInstall}
-              disabled={!installPrompt || installing}
-              className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col gap-3 hover:border-zinc-500 transition-all text-left disabled:opacity-50 disabled:cursor-default"
-            >
-              <span className="text-4xl">📲</span>
-              <div className="flex flex-col gap-1">
-                <h2 className="text-lg font-semibold text-white">
-                  {installing ? '설치 중...' : '앱 추가하기'}
-                </h2>
-                <p className="text-sm text-zinc-400 leading-relaxed">
-                  {installPrompt
-                    ? '홈 화면에 추가하면 앱처럼 사용하고 푸시 알림을 받을 수 있어요.'
-                    : '브라우저 메뉴에서 홈 화면에 추가해 주세요.'}
-                </p>
-              </div>
-            </button>
+            <div className="flex flex-col gap-0">
+              <button
+                onClick={handleInstall}
+                disabled={installing}
+                className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col gap-3 hover:border-zinc-500 transition-all text-left disabled:opacity-50 disabled:cursor-default"
+              >
+                <span className="text-4xl">📲</span>
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-semibold text-white">
+                    {installing ? '설치 중...' : '앱 추가하기'}
+                  </h2>
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    홈 화면에 추가하면 앱처럼 사용하고 푸시 알림을 받을 수 있어요.
+                  </p>
+                </div>
+              </button>
+
+              {showGuide && (
+                <div className="bg-zinc-800 border border-t-0 border-zinc-700 rounded-b-xl px-6 py-4 flex flex-col gap-2">
+                  {getGuideSteps().map((step, i) => (
+                    <p key={i} className="text-sm text-zinc-300 flex gap-2">
+                      <span className="text-zinc-500 flex-shrink-0">{i + 1}.</span>
+                      {step}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </section>
