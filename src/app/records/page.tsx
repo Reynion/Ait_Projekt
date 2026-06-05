@@ -7,6 +7,18 @@ import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import Image from 'next/image'
 
+function Avatar({ url, nickname }: { url: string | null; nickname: string }) {
+  return (
+    <div className="relative w-6 h-6 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+      {url ? (
+        <Image src={url} alt={nickname} fill className="object-cover" unoptimized />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-zinc-400 text-xs">👤</div>
+      )}
+    </div>
+  )
+}
+
 interface RecordPost {
   id: number
   title: string
@@ -144,34 +156,37 @@ export default function RecordsPage() {
               <ul className="flex flex-col gap-4">
                 {posts.map((post, idx) => (
                   <li key={post.id}>
-                    <Link href={`/records/${post.id}`} className="block bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors">
-                      <div className="flex gap-4">
+                    <Link href={`/records/${post.id}`} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-colors flex flex-col gap-2">
+                      <div className="flex gap-3 items-start">
+                        <span className="text-xs text-zinc-500 font-mono w-5 flex-shrink-0 text-right pt-0.5">{total - (page - 1) * PAGE_SIZE - idx}</span>
                         {post.image_urls.length > 0 && (
                           <div className="relative w-24 h-20 rounded-lg overflow-hidden flex-shrink-0 border border-zinc-600">
                             <Image src={post.image_urls[0]} alt={post.title} fill className="object-cover" unoptimized />
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs text-zinc-500 font-medium">#{total - (page - 1) * PAGE_SIZE - idx}</span>
-                            {post.record_type && (
+                          {post.record_type && (
+                            <div className="mb-1">
                               <span className={`text-xs px-2 py-0.5 rounded-full border ${TYPE_STYLE[post.record_type]}`}>
                                 {TYPE_LABEL[post.record_type]}
                               </span>
-                            )}
-                          </div>
+                            </div>
+                          )}
                           <p className="font-semibold text-white truncate">{post.title}</p>
                           <div className="flex items-center gap-2 mt-1 text-xs text-zinc-400">
                             <span>📅 {new Date(post.record_date).toLocaleDateString('ko-KR')}</span>
                             <span>📍 {post.location}</span>
                           </div>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-zinc-500">
-                            <span>{post.users?.nickname}</span>
-                            <span>·</span>
-                            <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                            {post.image_urls.length > 1 && <span>· 사진 {post.image_urls.length}장</span>}
-                          </div>
                         </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 pt-2 border-t border-zinc-700">
+                        <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
+                        <span className="text-xs text-zinc-300 font-medium truncate">{post.users?.nickname ?? '알 수 없음'}</span>
+                        <span className="text-zinc-600 flex-shrink-0">·</span>
+                        <span className="text-xs text-zinc-500 flex-shrink-0">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                        {post.image_urls.length > 0 && (
+                          <span className="text-xs text-zinc-500 ml-auto flex-shrink-0">🖼 {post.image_urls.length}</span>
+                        )}
                       </div>
                     </Link>
                   </li>

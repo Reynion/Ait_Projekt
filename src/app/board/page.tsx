@@ -212,7 +212,7 @@ export default function BoardPage() {
                   href={`/board/${post.id}`}
                   className="bg-amber-950/20 border border-amber-700/40 rounded-xl p-4 hover:border-amber-600/60 transition-all flex gap-3 items-start"
                 >
-                  <span className="text-sm text-amber-600 font-mono w-7 flex-shrink-0 pt-0.5 text-right">📌</span>
+                  <span className="text-xs text-amber-600 font-mono w-5 flex-shrink-0 pt-0.5 text-right">📌</span>
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-xs bg-amber-500/20 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
@@ -257,7 +257,7 @@ export default function BoardPage() {
                   href={`/board/${post.id}`}
                   className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-all flex gap-3 items-start"
                 >
-                  <span className="text-sm text-zinc-500 font-mono w-7 flex-shrink-0 pt-0.5 text-right">{seq}</span>
+                  <span className="text-xs text-zinc-500 font-mono w-5 flex-shrink-0 pt-0.5 text-right">{seq}</span>
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       {post.post_type === 'music' && (
