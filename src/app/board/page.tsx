@@ -210,32 +210,34 @@ export default function BoardPage() {
               <li key={post.id}>
                 <Link
                   href={`/board/${post.id}`}
-                  className="bg-amber-950/20 border border-amber-700/40 rounded-xl p-4 hover:border-amber-600/60 transition-all flex gap-3 items-start"
+                  className="bg-amber-950/20 border border-amber-700/40 rounded-xl p-4 hover:border-amber-600/60 transition-all flex flex-col gap-2"
                 >
-                  <span className="text-xs text-amber-600 font-mono w-5 flex-shrink-0 pt-0.5 text-right">📌</span>
-                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs bg-amber-500/20 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
-                      <h3 className="font-semibold text-white truncate">{post.title}</h3>
-                    </div>
-                    <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-amber-800/40 mt-1">
-                      <button
-                        type="button"
-                        onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
-                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-                      >
-                        <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
-                        <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
-                      </button>
-                      <span>·</span>
-                      <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                      <div className="ml-auto flex items-center gap-2">
-                        {post.image_urls && post.image_urls.length > 0 && (
-                          <span>🖼 {post.image_urls.length}</span>
-                        )}
-                        <span>💬 {post.commentCount}</span>
+                  <div className="flex gap-3 items-start">
+                    <span className="text-xs text-amber-600 font-mono w-5 flex-shrink-0 pt-0.5 text-right">📌</span>
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-amber-500/20 text-amber-700 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">공지</span>
+                        <h3 className="font-semibold text-white truncate">{post.title}</h3>
                       </div>
+                      <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 pt-2 border-t border-amber-800/40">
+                    <button
+                      type="button"
+                      onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
+                      className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                    >
+                      <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
+                      <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                    </button>
+                    <span>·</span>
+                    <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                    <div className="ml-auto flex items-center gap-2">
+                      {post.image_urls && post.image_urls.length > 0 && (
+                        <span>🖼 {post.image_urls.length}</span>
+                      )}
+                      <span>💬 {post.commentCount}</span>
                     </div>
                   </div>
                 </Link>
@@ -255,34 +257,36 @@ export default function BoardPage() {
               <li key={post.id}>
                 <Link
                   href={`/board/${post.id}`}
-                  className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-all flex gap-3 items-start"
+                  className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 hover:border-zinc-500 transition-all flex flex-col gap-2"
                 >
-                  <span className="text-xs text-zinc-500 font-mono w-5 flex-shrink-0 pt-0.5 text-right">{seq}</span>
-                  <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      {post.post_type === 'music' && (
-                        <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
-                      )}
-                      <h3 className="font-semibold text-white truncate">{post.title}</h3>
-                    </div>
-                    <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
-                    <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-zinc-700 mt-1">
-                      <button
-                        type="button"
-                        onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
-                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
-                      >
-                        <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
-                        <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
-                      </button>
-                      <span>·</span>
-                      <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
-                      <div className="ml-auto flex items-center gap-2">
-                        {post.image_urls && post.image_urls.length > 0 && (
-                          <span>🖼 {post.image_urls.length}</span>
+                  <div className="flex gap-3 items-start">
+                    <span className="text-xs text-zinc-500 font-mono w-5 flex-shrink-0 pt-0.5 text-right">{seq}</span>
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {post.post_type === 'music' && (
+                          <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
                         )}
-                        <span>💬 {post.commentCount}</span>
+                        <h3 className="font-semibold text-white truncate">{post.title}</h3>
                       </div>
+                      <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-zinc-500 pt-2 border-t border-zinc-700">
+                    <button
+                      type="button"
+                      onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
+                      className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                    >
+                      <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
+                      <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                    </button>
+                    <span>·</span>
+                    <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
+                    <div className="ml-auto flex items-center gap-2">
+                      {post.image_urls && post.image_urls.length > 0 && (
+                        <span>🖼 {post.image_urls.length}</span>
+                      )}
+                      <span>💬 {post.commentCount}</span>
                     </div>
                   </div>
                 </Link>
