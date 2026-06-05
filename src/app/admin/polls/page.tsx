@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -17,6 +17,10 @@ interface Poll {
 export default function AdminPolls() {
   const [polls, setPolls] = useState<Poll[]>([])
   const [loading, setLoading] = useState(true)
+
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'ended'>('all')
+  const [searchText, setSearchText] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
 
   async function fetchPolls() {
     const supabase = createClient()
@@ -40,6 +44,23 @@ export default function AdminPolls() {
     setPolls(prev => prev.filter(p => p.id !== id))
   }
 
+  const filtered = useMemo(() => {
+    let list = [...polls]
+
+    if (statusFilter === 'active') list = list.filter(p => p.is_active)
+    else if (statusFilter === 'ended') list = list.filter(p => !p.is_active)
+
+    if (appliedSearch) {
+      const q = appliedSearch.replace(/\s/g, '').toLowerCase()
+      list = list.filter(p =>
+        p.title.replace(/\s/g, '').toLowerCase().includes(q) ||
+        (p.description ?? '').replace(/\s/g, '').toLowerCase().includes(q)
+      )
+    }
+
+    return list
+  }, [polls, statusFilter, appliedSearch])
+
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
   return (
@@ -51,13 +72,52 @@ export default function AdminPolls() {
         </Link>
       </div>
 
+      {/* 상태 탭 */}
+      <div className="flex gap-2 flex-wrap">
+        {(['all', 'active', 'ended'] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setStatusFilter(s)}
+            className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${statusFilter === s ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
+          >
+            {s === 'all' ? '전체' : s === 'active' ? '진행중' : '종료'}
+          </button>
+        ))}
+      </div>
+
+      {/* 검색 */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={searchText}
+          onChange={e => setSearchText(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') setAppliedSearch(searchText) }}
+          placeholder="제목 / 설명 검색"
+          className="flex-1 min-w-0 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+        />
+        <button
+          onClick={() => setAppliedSearch(searchText)}
+          className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg text-zinc-200 transition-colors flex-shrink-0"
+        >
+          검색
+        </button>
+        {appliedSearch && (
+          <button
+            onClick={() => { setSearchText(''); setAppliedSearch('') }}
+            className="px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
       <div className="flex flex-col gap-3">
-        {polls.length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">
             생성된 투표가 없습니다.
           </div>
         )}
-        {polls.map((poll) => (
+        {filtered.map((poll) => (
           <div key={poll.id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-zinc-600 transition-colors">
             <div className="flex flex-col gap-1 flex-1 min-w-0">
               <div className="flex items-center gap-2">

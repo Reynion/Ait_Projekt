@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -25,6 +25,11 @@ export default function AdminRecords() {
   const [records, setRecords] = useState<RecordPost[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [typeFilter, setTypeFilter] = useState<'all' | 'concert' | 'practice' | 'etc'>('all')
+  const [searchText, setSearchText] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest')
+
   async function fetchRecords() {
     const supabase = createClient()
     const { data } = await supabase
@@ -46,6 +51,25 @@ export default function AdminRecords() {
     setRecords(prev => prev.filter(r => r.id !== id))
   }
 
+  const filtered = useMemo(() => {
+    let list = [...records]
+
+    if (typeFilter !== 'all') list = list.filter(r => r.record_type === typeFilter)
+
+    if (appliedSearch) {
+      const q = appliedSearch.replace(/\s/g, '').toLowerCase()
+      list = list.filter(r =>
+        r.title.replace(/\s/g, '').toLowerCase().includes(q) ||
+        r.location.replace(/\s/g, '').toLowerCase().includes(q) ||
+        (r.users?.nickname ?? '').replace(/\s/g, '').toLowerCase().includes(q)
+      )
+    }
+
+    if (sort === 'oldest') list = list.reverse()
+
+    return list
+  }, [records, typeFilter, appliedSearch, sort])
+
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
   return (
@@ -60,13 +84,62 @@ export default function AdminRecords() {
         </Link>
       </div>
 
+      {/* 유형 탭 */}
+      <div className="flex gap-2 flex-wrap">
+        {(['all', 'concert', 'practice', 'etc'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${typeFilter === t ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
+          >
+            {t === 'all' ? '전체' : TYPE_LABEL[t]}
+          </button>
+        ))}
+      </div>
+
+      {/* 검색 + 정렬 */}
+      <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-1 min-w-0 gap-2">
+          <input
+            type="text"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') setAppliedSearch(searchText) }}
+            placeholder="제목 / 장소 / 닉네임 검색"
+            className="flex-1 min-w-0 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+          />
+          <button
+            onClick={() => setAppliedSearch(searchText)}
+            className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg text-zinc-200 transition-colors flex-shrink-0"
+          >
+            검색
+          </button>
+          {appliedSearch && (
+            <button
+              onClick={() => { setSearchText(''); setAppliedSearch('') }}
+              className="px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <select
+          value={sort}
+          onChange={e => setSort(e.target.value as 'newest' | 'oldest')}
+          className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+        >
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된순</option>
+        </select>
+      </div>
+
       <div className="flex flex-col gap-3">
-        {records.length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">
             등록된 기록이 없습니다.
           </div>
         )}
-        {records.map((record) => (
+        {filtered.map((record) => (
           <div
             key={record.id}
             className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-zinc-600 transition-colors"

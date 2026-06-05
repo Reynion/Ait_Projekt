@@ -20,6 +20,8 @@ interface Post {
   created_at: string
   user_id: string
   users: { nickname: string; avatar_url: string | null } | null
+  season_id: number | null
+  seasons: { name: string } | null
 }
 
 export default function PostDetailPage() {
@@ -41,7 +43,7 @@ export default function PostDetailPage() {
 
       const { data } = await supabase
         .from('posts')
-        .select('*, users(nickname, avatar_url)')
+        .select('*, users(nickname, avatar_url), seasons(name)')
         .eq('id', id)
         .single()
 
@@ -112,6 +114,9 @@ export default function PostDetailPage() {
               <h1 className="text-xl sm:text-2xl font-bold text-white break-words">{post.title}</h1>
               {post.artist && (
                 <p className="text-sm text-zinc-400">{post.artist}</p>
+              )}
+              {post.seasons && (
+                <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full w-fit">{post.seasons.name}</span>
               )}
             </div>
             {post.user_id === currentUserId && (

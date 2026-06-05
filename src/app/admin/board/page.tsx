@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -27,6 +27,11 @@ export default function AdminBoardPage() {
   const [comments, setComments] = useState<BoardComment[]>([])
   const [openPostId, setOpenPostId] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const [typeFilter, setTypeFilter] = useState<'all' | 'normal' | 'music'>('all')
+  const [searchText, setSearchText] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
+  const [sort, setSort] = useState<'newest' | 'oldest'>('newest')
 
   async function fetchData() {
     const supabase = createClient()
@@ -63,19 +68,87 @@ export default function AdminBoardPage() {
     setComments(prev => prev.filter(c => c.id !== id))
   }
 
+  const filtered = useMemo(() => {
+    let list = [...posts]
+
+    if (typeFilter === 'music') list = list.filter(p => p.post_type === 'music')
+    else if (typeFilter === 'normal') list = list.filter(p => p.post_type !== 'music')
+
+    if (appliedSearch) {
+      const q = appliedSearch.replace(/\s/g, '').toLowerCase()
+      list = list.filter(p =>
+        p.title.replace(/\s/g, '').toLowerCase().includes(q) ||
+        (p.users?.nickname ?? '').replace(/\s/g, '').toLowerCase().includes(q)
+      )
+    }
+
+    if (sort === 'oldest') list = list.reverse()
+
+    return list
+  }, [posts, typeFilter, appliedSearch, sort])
+
   if (loading) return <p className="text-zinc-400">불러오는 중...</p>
 
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-white">게시글 관리</h1>
 
+      {/* 유형 탭 */}
+      <div className="flex gap-2 flex-wrap">
+        {(['all', 'normal', 'music'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTypeFilter(t)}
+            className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${typeFilter === t ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
+          >
+            {t === 'all' ? '전체' : t === 'normal' ? '기본' : '🎵 노래공유'}
+          </button>
+        ))}
+      </div>
+
+      {/* 검색 + 정렬 */}
+      <div className="flex gap-2 flex-wrap">
+        <div className="flex flex-1 min-w-0 gap-2">
+          <input
+            type="text"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') setAppliedSearch(searchText) }}
+            placeholder="제목 / 닉네임 검색"
+            className="flex-1 min-w-0 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+          />
+          <button
+            onClick={() => setAppliedSearch(searchText)}
+            className="px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg text-zinc-200 transition-colors flex-shrink-0"
+          >
+            검색
+          </button>
+          {appliedSearch && (
+            <button
+              onClick={() => { setSearchText(''); setAppliedSearch('') }}
+              className="px-3 py-2 text-sm text-zinc-400 hover:text-white transition-colors flex-shrink-0"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <select
+          value={sort}
+          onChange={e => setSort(e.target.value as 'newest' | 'oldest')}
+          className="bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-zinc-400 flex-shrink-0"
+        >
+          <option value="newest">최신순</option>
+          <option value="oldest">오래된순</option>
+        </select>
+      </div>
+
       <div className="flex flex-col gap-3">
-        {posts.length === 0 && (
+        {filtered.length === 0 && (
           <div className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">
             게시글이 없습니다.
           </div>
         )}
-        {posts.map(post => (
+        {filtered.map(post => (
           <div key={post.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 p-4">
               <div className="flex flex-col gap-1 flex-1 min-w-0">

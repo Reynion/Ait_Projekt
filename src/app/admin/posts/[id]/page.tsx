@@ -16,6 +16,7 @@ interface Post {
   created_at: string
   user_id: string
   users: { nickname: string; avatar_url: string | null } | null
+  seasons: { name: string } | null
 }
 
 interface Comment {
@@ -38,7 +39,7 @@ export default function AdminPostDetailPage() {
     async function load() {
       const { data: postData } = await supabase
         .from('posts')
-        .select('*, users(nickname, avatar_url)')
+        .select('*, users(nickname, avatar_url), seasons(name)')
         .eq('id', id)
         .single()
       if (!postData) { router.push('/admin/posts'); return }
@@ -100,6 +101,9 @@ export default function AdminPostDetailPage() {
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-white">{post.title}</h1>
             {post.artist && <p className="text-sm text-zinc-400 mt-0.5">{post.artist}</p>}
+            {post.seasons && (
+              <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/30 px-2 py-0.5 rounded-full inline-block mt-1">{post.seasons.name}</span>
+            )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
             <Link
