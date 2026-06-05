@@ -285,7 +285,8 @@ export default function EditBoardPostPage() {
                     value={musicIntro}
                     onChange={e => setMusicIntro(e.target.value)}
                     rows={4}
-                    placeholder="곡 소개 전 내용을 입력하세요..."
+                    required
+                    placeholder="내용을 입력하세요..."
                     className={`${inputClass} resize-none`}
                   />
                 </div>

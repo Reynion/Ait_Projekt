@@ -72,7 +72,7 @@ export default function Home() {
         supabase.from('polls').select('id, title, is_active').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('polls').select('id', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),
         supabase.from('schedules').select('id, title, start_date').is('deleted_at', null).order('start_date', { ascending: true }).gte('start_date', new Date().toISOString().slice(0, 10)).limit(3),
-        supabase.from('record_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('record_date', { ascending: false }).limit(3),
+        supabase.from('record_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
       ])
 
       setNotices((noticeData ?? []) as Notice[])

@@ -75,7 +75,7 @@ export default function RecordsPage() {
       .select('*, users(nickname, avatar_url)')
       .eq('is_notice', true)
       .is('deleted_at', null)
-      .order('record_date', { ascending: false })
+      .order('created_at', { ascending: false })
     if (noticeData) setNotices(noticeData as unknown as RecordPost[])
 
     const from = (page - 1) * PAGE_SIZE
@@ -85,7 +85,7 @@ export default function RecordsPage() {
       .select('*, users(nickname, avatar_url)', { count: 'exact' })
       .eq('is_notice', false)
       .is('deleted_at', null)
-      .order('record_date', { ascending: false })
+      .order('created_at', { ascending: false })
       .range(from, to)
     if (data) setPosts(data as unknown as RecordPost[])
     if (count !== null) setTotal(count)

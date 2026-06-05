@@ -31,7 +31,7 @@ export default function AdminRecords() {
       .from('record_posts')
       .select('id, title, record_date, location, record_type, created_at, users(nickname)')
       .is('deleted_at', null)
-      .order('record_date', { ascending: false })
+      .order('created_at', { ascending: false })
     if (data) setRecords(data as unknown as RecordPost[])
     setLoading(false)
   }
