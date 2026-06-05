@@ -47,8 +47,12 @@ export default function PostList() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
+
   const [posts, setPosts] = useState<Post[]>([])
   const [seasons, setSeasons] = useState<Season[]>([])
+  const [members, setMembers] = useState<string[]>([])
+
+  // 모든 상태 초기값을 URL에서 읽음
   const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>(() => {
     const s = searchParams.get('season')
     if (!s || s === 'all') return 'all'
@@ -56,36 +60,38 @@ export default function PostList() {
     const n = parseInt(s)
     return isNaN(n) ? 'all' : n
   })
-  const [members, setMembers] = useState<string[]>([])
-  const [sort, setSort] = useState<SortType>('latest')
-  const [selectedMember, setSelectedMember] = useState<string>('all')
+  const [sort, setSort] = useState<SortType>(() => searchParams.get('sort') === 'likes' ? 'likes' : 'latest')
+  const [selectedMember, setSelectedMember] = useState<string>(() => searchParams.get('member') ?? 'all')
+  const [searchType, setSearchType] = useState<SearchType>(() => searchParams.get('st') === 'artist' ? 'artist' : 'title')
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
+  const [dateFrom, setDateFrom] = useState(() => searchParams.get('from') ?? '')
+  const [dateTo, setDateTo] = useState(() => searchParams.get('to') ?? '')
+  const [appliedSearchType, setAppliedSearchType] = useState<SearchType>(() => searchParams.get('st') === 'artist' ? 'artist' : 'title')
+  const [appliedSearch, setAppliedSearch] = useState(() => searchParams.get('q') ?? '')
+  const [appliedDateFrom, setAppliedDateFrom] = useState(() => searchParams.get('from') ?? '')
+  const [appliedDateTo, setAppliedDateTo] = useState(() => searchParams.get('to') ?? '')
+  const [currentPage, setCurrentPage] = useState(() => {
+    const p = parseInt(searchParams.get('page') ?? '1')
+    return isNaN(p) || p < 1 ? 1 : p
+  })
 
-  const [searchType, setSearchType] = useState<SearchType>('title')
-  const [search, setSearch] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-
-  const [appliedSearchType, setAppliedSearchType] = useState<SearchType>('title')
-  const [appliedSearch, setAppliedSearch] = useState('')
-  const [appliedDateFrom, setAppliedDateFrom] = useState('')
-  const [appliedDateTo, setAppliedDateTo] = useState('')
-
-  const [currentPage, setCurrentPage] = useState(1)
-
-  function applySearch() {
-    setAppliedSearch(search)
-    setAppliedSearchType(searchType)
-    setAppliedDateFrom(dateFrom)
-    setAppliedDateTo(dateTo)
-    setCurrentPage(1)
-  }
-
-  function resetDates() {
-    setDateFrom('')
-    setDateTo('')
-    setAppliedDateFrom('')
-    setAppliedDateTo('')
-    setCurrentPage(1)
+  function updateUrl(updates: Record<string, string | null>) {
+    const params = new URLSearchParams(searchParams.toString())
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '') {
+        params.delete(key)
+      } else {
+        params.set(key, value)
+      }
+    })
+    // 기본값은 URL에서 제거
+    if (params.get('sort') === 'latest') params.delete('sort')
+    if (params.get('member') === 'all') params.delete('member')
+    if (params.get('st') === 'title') params.delete('st')
+    if (params.get('season') === 'all') params.delete('season')
+    if (params.get('page') === '1') params.delete('page')
+    const qs = params.toString()
+    router.push(`${pathname}${qs ? '?' + qs : ''}`, { scroll: false })
   }
 
   async function fetchData() {
@@ -105,7 +111,9 @@ export default function PostList() {
       const activeSeason = fetchedSeasons.find(s => s.is_active)
       if (activeSeason) {
         setSelectedSeason(activeSeason.id)
-        router.replace(`${pathname}?season=${activeSeason.id}`, { scroll: false })
+        const params = new URLSearchParams(window.location.search)
+        params.set('season', String(activeSeason.id))
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false })
       }
     }
 
@@ -116,7 +124,7 @@ export default function PostList() {
       .order('created_at', { ascending: false })
 
     const { data: likesData } = await supabase.from('likes').select('post_id, is_like')
-    const { data: commentsData } = await supabase.from('comments').select('post_id')
+    const { data: commentsData } = await supabase.from('comments').select('post_id').is('deleted_at', null)
 
     const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(post => ({
       ...post,
@@ -143,9 +151,48 @@ export default function PostList() {
   function handleSeasonChange(val: number | 'all' | 'none') {
     setSelectedSeason(val)
     setCurrentPage(1)
-    const params = new URLSearchParams(searchParams.toString())
-    params.set('season', String(val))
-    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+    updateUrl({ season: String(val), page: null })
+  }
+
+  function handleSortChange(val: SortType) {
+    setSort(val)
+    setCurrentPage(1)
+    updateUrl({ sort: val, page: null })
+  }
+
+  function handleMemberChange(val: string) {
+    setSelectedMember(val)
+    setCurrentPage(1)
+    updateUrl({ member: val, page: null })
+  }
+
+  function handlePageChange(page: number) {
+    setCurrentPage(page)
+    updateUrl({ page: String(page) })
+  }
+
+  function applySearch() {
+    setAppliedSearch(search)
+    setAppliedSearchType(searchType)
+    setAppliedDateFrom(dateFrom)
+    setAppliedDateTo(dateTo)
+    setCurrentPage(1)
+    updateUrl({
+      q: search || null,
+      st: searchType,
+      from: dateFrom || null,
+      to: dateTo || null,
+      page: null,
+    })
+  }
+
+  function resetDates() {
+    setDateFrom('')
+    setDateTo('')
+    setAppliedDateFrom('')
+    setAppliedDateTo('')
+    setCurrentPage(1)
+    updateUrl({ from: null, to: null, page: null })
   }
 
   const filtered = posts
@@ -184,30 +231,14 @@ export default function PostList() {
       {/* 시즌 탭 */}
       {seasons.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            onClick={() => handleSeasonChange('all')}
-            className={tabClass(selectedSeason === 'all')}
-          >
-            전체
-          </button>
+          <button onClick={() => handleSeasonChange('all')} className={tabClass(selectedSeason === 'all')}>전체</button>
           {seasons.map(s => (
-            <button
-              key={s.id}
-              onClick={() => handleSeasonChange(s.id)}
-              className={`${tabClass(selectedSeason === s.id)} ${s.is_active ? 'relative' : ''}`}
-            >
+            <button key={s.id} onClick={() => handleSeasonChange(s.id)} className={`${tabClass(selectedSeason === s.id)} ${s.is_active ? 'relative' : ''}`}>
               {s.name}
-              {s.is_active && (
-                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400 align-middle" />
-              )}
+              {s.is_active && <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400 align-middle" />}
             </button>
           ))}
-          <button
-            onClick={() => handleSeasonChange('none')}
-            className={tabClass(selectedSeason === 'none')}
-          >
-            미분류
-          </button>
+          <button onClick={() => handleSeasonChange('none')} className={tabClass(selectedSeason === 'none')}>미분류</button>
         </div>
       )}
 
@@ -240,13 +271,11 @@ export default function PostList() {
         <div className="flex gap-2">
           <select
             value={selectedMember}
-            onChange={e => { setSelectedMember(e.target.value); setCurrentPage(1) }}
+            onChange={e => handleMemberChange(e.target.value)}
             className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-2 py-2 text-sm text-zinc-200 focus:outline-none focus:border-zinc-400"
           >
             <option value="all">전체 멤버</option>
-            {members.map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
+            {members.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -286,7 +315,7 @@ export default function PostList() {
         {(['latest', 'likes'] as SortType[]).map(s => (
           <button
             key={s}
-            onClick={() => { setSort(s); setCurrentPage(1) }}
+            onClick={() => handleSortChange(s)}
             className={`px-3 py-1.5 rounded-lg border transition-colors ${
               sort === s
                 ? 'bg-zinc-700 border-zinc-500 text-white'
@@ -348,7 +377,7 @@ export default function PostList() {
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1 pt-2">
           <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
             className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
           >
@@ -357,7 +386,7 @@ export default function PostList() {
           {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
             <button
               key={page}
-              onClick={() => setCurrentPage(page)}
+              onClick={() => handlePageChange(page)}
               className={`px-3 py-1.5 rounded-lg border text-sm transition-colors ${
                 page === currentPage
                   ? 'bg-zinc-700 border-zinc-500 text-white'
@@ -368,7 +397,7 @@ export default function PostList() {
             </button>
           ))}
           <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
             className="px-3 py-1.5 rounded-lg border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm"
           >
