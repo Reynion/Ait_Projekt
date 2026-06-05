@@ -8,6 +8,7 @@ import { validateImageFile } from '@/lib/validateUpload'
 interface UserRow {
   id: string
   nickname: string
+  name: string | null
   email: string
   phone: string | null
   avatar_url: string | null
@@ -20,7 +21,7 @@ export default function AdminAccounts() {
   const [users, setUsers] = useState<UserRow[]>([])
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ nickname: '', email: '', phone: '' })
+  const [editForm, setEditForm] = useState({ nickname: '', name: '', email: '', phone: '' })
   const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -30,7 +31,7 @@ export default function AdminAccounts() {
     const supabase = createClient()
     const { data } = await supabase
       .from('users')
-      .select('id, nickname, email, phone, avatar_url, role, created_at, last_seen_at')
+      .select('id, nickname, name, email, phone, avatar_url, role, created_at, last_seen_at')
       .order('created_at', { ascending: false })
     if (data) setUsers(data as UserRow[])
     setLoading(false)
@@ -47,13 +48,13 @@ export default function AdminAccounts() {
 
   function startEdit(user: UserRow) {
     setEditingId(user.id)
-    setEditForm({ nickname: user.nickname, email: user.email, phone: user.phone ?? '' })
+    setEditForm({ nickname: user.nickname, name: user.name ?? '', email: user.email, phone: user.phone ?? '' })
     setEditAvatarUrl(user.avatar_url)
   }
 
   function cancelEdit() {
     setEditingId(null)
-    setEditForm({ nickname: '', email: '', phone: '' })
+    setEditForm({ nickname: '', name: '', email: '', phone: '' })
     setEditAvatarUrl(null)
   }
 
@@ -80,6 +81,7 @@ export default function AdminAccounts() {
     const supabase = createClient()
     const updated = {
       nickname: editForm.nickname.trim(),
+      name: editForm.name.trim() || null,
       email: editForm.email.trim(),
       phone: editForm.phone.trim() || null,
       avatar_url: editAvatarUrl,
@@ -96,7 +98,7 @@ export default function AdminAccounts() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-white">계정 관리</h1>
+      <h1 className="text-2xl font-bold text-white">멤버 관리</h1>
       <div className="flex flex-col gap-3">
         {users.length === 0 && (
           <p className="text-center text-zinc-500 py-10 bg-zinc-800 border border-zinc-700 rounded-xl">계정이 없습니다.</p>
@@ -125,6 +127,7 @@ export default function AdminAccounts() {
                       {user.role === 'admin' ? '관리자' : '멤버'}
                     </span>
                   </div>
+                  {user.name && <span className="text-xs text-zinc-400">{user.name}</span>}
                   <span className="text-xs text-zinc-500 truncate">{user.email}</span>
                   {user.phone && <span className="text-xs text-zinc-500">{user.phone}</span>}
                   <span className="text-xs text-zinc-600">가입: {new Date(user.created_at).toLocaleDateString('ko-KR')}</span>
@@ -196,6 +199,16 @@ export default function AdminAccounts() {
                         type="text"
                         value={editForm.nickname}
                         onChange={e => setEditForm(f => ({ ...f, nickname: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-xs text-zinc-400 font-medium">이름</label>
+                      <input
+                        type="text"
+                        value={editForm.name}
+                        onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                        placeholder="실명"
                         className={inputClass}
                       />
                     </div>
