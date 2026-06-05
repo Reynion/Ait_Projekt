@@ -10,6 +10,7 @@ interface BoardPost {
   content: string
   image_urls: string[] | null
   created_at: string
+  post_type: string | null
   users: { nickname: string } | null
 }
 
@@ -78,7 +79,12 @@ export default function AdminBoardPage() {
           <div key={post.id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 p-4">
               <div className="flex flex-col gap-1 flex-1 min-w-0">
-                <span className="font-semibold text-zinc-100 truncate">{post.title}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {post.post_type === 'music' && (
+                    <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
+                  )}
+                  <span className="font-semibold text-zinc-100 truncate">{post.title}</span>
+                </div>
                 <p className="text-xs text-zinc-500 line-clamp-1">{post.content}</p>
                 <div className="flex items-center gap-2 text-xs text-zinc-500 mt-0.5">
                   <span className="text-zinc-400">{post.users?.nickname ?? '알 수 없음'}</span>

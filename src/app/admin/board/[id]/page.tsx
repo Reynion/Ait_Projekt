@@ -6,12 +6,25 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import Image from 'next/image'
 
+interface MusicItem {
+  youtube_url: string
+  comment: string
+}
+
+function getYoutubeId(url: string): string | null {
+  const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return match ? match[1] : null
+}
+
 interface BoardPost {
   id: number
   title: string
   content: string
   image_urls: string[] | null
   created_at: string
+  post_type: string | null
+  music_items: MusicItem[] | null
+  music_outro: string | null
   users: { nickname: string; avatar_url: string | null } | null
 }
 
@@ -81,7 +94,12 @@ export default function AdminBoardDetailPage() {
 
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-xl font-bold text-white">{post.title}</h1>
+          <div className="flex items-center gap-2 min-w-0">
+            {post.post_type === 'music' && (
+              <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
+            )}
+            <h1 className="text-xl font-bold text-white min-w-0 break-words">{post.title}</h1>
+          </div>
           <button
             onClick={handleDeletePost}
             className="text-sm text-zinc-500 hover:text-red-400 border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg transition-colors flex-shrink-0"
@@ -102,17 +120,46 @@ export default function AdminBoardDetailPage() {
           <span className="text-zinc-500 text-sm">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
         </div>
 
-        <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+        {post.post_type === 'music' && post.music_items && post.music_items.length > 0 ? (
+          <div className="flex flex-col gap-6">
+            {post.content && (
+              <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+            )}
+            {post.music_items.map((item, idx) => (
+              <div key={idx} className="flex flex-col gap-2">
+                <span className="text-xs font-medium text-zinc-400">🎵 {idx + 1}번 곡</span>
+                {getYoutubeId(item.youtube_url) && (
+                  <div className="aspect-video rounded-lg overflow-hidden border border-zinc-600">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${getYoutubeId(item.youtube_url)}`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+                {item.comment && (
+                  <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap bg-zinc-900/50 rounded-lg px-3 py-2.5">{item.comment}</p>
+                )}
+              </div>
+            ))}
+            {post.music_outro && (
+              <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap border-t border-zinc-700 pt-4">{post.music_outro}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+        )}
 
-          {post.image_urls && post.image_urls.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-zinc-700">
-              {post.image_urls.map((url, idx) => (
-                <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-zinc-600 hover:border-zinc-400 transition-colors">
-                  <Image src={url} alt="" fill className="object-cover" unoptimized />
-                </a>
-              ))}
-            </div>
-          )}
+        {post.image_urls && post.image_urls.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-3 border-t border-zinc-700">
+            {post.image_urls.map((url, idx) => (
+              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="relative aspect-square rounded-lg overflow-hidden border border-zinc-600 hover:border-zinc-400 transition-colors">
+                <Image src={url} alt="" fill className="object-cover" unoptimized />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
