@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import Navbar from '@/components/Navbar'
+import UserProfileModal from '@/components/UserProfileModal'
 
 interface BoardPost {
   id: number
@@ -14,8 +16,22 @@ interface BoardPost {
   created_at: string
   user_id: string
   is_notice: boolean
+  post_type: string | null
+  music_items: { youtube_url: string; comment: string }[] | null
   users: { nickname: string; avatar_url: string | null } | null
   commentCount: number
+}
+
+function Avatar({ url, nickname }: { url: string | null; nickname: string }) {
+  return (
+    <div className="relative w-6 h-6 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+      {url ? (
+        <Image src={url} alt={nickname} fill className="object-cover" unoptimized />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center text-zinc-400 text-xs">👤</div>
+      )}
+    </div>
+  )
 }
 
 type SearchType = 'title' | 'content'
@@ -37,6 +53,7 @@ export default function BoardPage() {
   const [appliedDateTo, setAppliedDateTo] = useState('')
 
   const [currentPage, setCurrentPage] = useState(1)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   function applySearch() {
     setAppliedSearchType(searchType)
@@ -104,6 +121,7 @@ export default function BoardPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
+      {profileUserId && <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />}
       <Navbar />
 
       <section className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
@@ -202,7 +220,14 @@ export default function BoardPage() {
                     </div>
                     <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
                     <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-amber-800/40 mt-1">
-                      <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
+                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                      >
+                        <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
+                        <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                      </button>
                       <span>·</span>
                       <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
                       <div className="ml-auto flex items-center gap-2">
@@ -234,10 +259,25 @@ export default function BoardPage() {
                 >
                   <span className="text-sm text-zinc-500 font-mono w-7 flex-shrink-0 pt-0.5 text-right">{seq}</span>
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                    <h3 className="font-semibold text-white truncate">{post.title}</h3>
-                    <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {post.post_type === 'music' && (
+                        <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 음악</span>
+                      )}
+                      <h3 className="font-semibold text-white truncate">{post.title}</h3>
+                    </div>
+                    {post.post_type === 'music'
+                      ? <p className="text-sm text-zinc-400">유튜브 {post.music_items?.length ?? 0}곡 공유</p>
+                      : <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
+                    }
                     <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-zinc-700 mt-1">
-                      <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); setProfileUserId(post.user_id) }}
+                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                      >
+                        <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} />
+                        <span className="text-zinc-300">{post.users?.nickname ?? '알 수 없음'}</span>
+                      </button>
                       <span>·</span>
                       <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
                       <div className="ml-auto flex items-center gap-2">

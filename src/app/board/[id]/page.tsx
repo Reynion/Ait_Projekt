@@ -8,6 +8,17 @@ import BoardCommentSection from '@/components/BoardCommentSection'
 import { notifyAll } from '@/lib/notifications'
 import Link from 'next/link'
 import Image from 'next/image'
+import UserProfileModal from '@/components/UserProfileModal'
+
+interface MusicItem {
+  youtube_url: string
+  comment: string
+}
+
+function getYoutubeId(url: string): string | null {
+  const match = url.match(/(?:v=|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return match ? match[1] : null
+}
 
 interface BoardPost {
   id: number
@@ -17,6 +28,8 @@ interface BoardPost {
   created_at: string
   user_id: string
   is_notice: boolean
+  post_type: string | null
+  music_items: MusicItem[] | null
   users: { nickname: string; avatar_url: string | null } | null
 }
 
@@ -29,6 +42,7 @@ export default function BoardPostDetailPage() {
   const [prevPost, setPrevPost] = useState<{ id: number; title: string } | null>(null)
   const [nextPost, setNextPost] = useState<{ id: number; title: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -92,6 +106,7 @@ export default function BoardPostDetailPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
+      {profileUserId && <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />}
       <Navbar />
 
       <div className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
@@ -137,18 +152,41 @@ export default function BoardPostDetailPage() {
           </div>
 
           <div className="flex items-center gap-2 pb-3 border-b border-zinc-700">
-            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+            <button type="button" onClick={() => setProfileUserId(post.user_id)} className="relative w-8 h-8 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0 hover:opacity-80 transition-opacity">
               {post.users?.avatar_url ? (
                 <Image src={post.users.avatar_url} alt={post.users.nickname} fill className="object-cover" unoptimized />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-zinc-400 text-sm">👤</div>
               )}
-            </div>
-            <span className="text-zinc-200 font-medium">{post.users?.nickname ?? '알 수 없음'}</span>
+            </button>
+            <button type="button" onClick={() => setProfileUserId(post.user_id)} className="text-zinc-200 font-medium hover:text-white transition-colors">{post.users?.nickname ?? '알 수 없음'}</button>
             <span className="text-zinc-500 text-sm ml-1">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
           </div>
 
-          <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+          {post.post_type === 'music' && post.music_items && post.music_items.length > 0 ? (
+            <div className="flex flex-col gap-6">
+              {post.music_items.map((item, idx) => (
+                <div key={idx} className="flex flex-col gap-2">
+                  <span className="text-xs font-medium text-zinc-400">🎵 {idx + 1}번 곡</span>
+                  {getYoutubeId(item.youtube_url) && (
+                    <div className="aspect-video rounded-lg overflow-hidden border border-zinc-600">
+                      <iframe
+                        src={`https://www.youtube.com/embed/${getYoutubeId(item.youtube_url)}`}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  )}
+                  {item.comment && (
+                    <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap bg-zinc-900/50 rounded-lg px-3 py-2.5">{item.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+          )}
 
           {post.image_urls && post.image_urls.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2 border-t border-zinc-700">

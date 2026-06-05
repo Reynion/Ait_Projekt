@@ -238,7 +238,7 @@ export default function PostList() {
               onClick={() => router.push(`/posts/${post.id}`)}
               className="bg-zinc-800 border border-zinc-700 rounded-xl p-3 hover:border-zinc-500 transition-all cursor-pointer flex gap-3 items-center"
             >
-              <span className="text-xs text-zinc-500 font-mono w-6 flex-shrink-0 text-right">{seq}</span>
+              <span className="text-xs text-zinc-500 font-mono w-5 flex-shrink-0 text-right">{seq}</span>
               {thumbnail ? (
                 <div className="relative w-20 h-14 sm:w-32 sm:h-20 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-700 border border-zinc-600">
                   <Image src={thumbnail} alt={post.title} fill className="object-cover" unoptimized />
@@ -252,7 +252,7 @@ export default function PostList() {
                 {post.description && <p className="text-xs text-zinc-500 line-clamp-1 sm:line-clamp-2">{post.description}</p>}
                 <div className="flex items-center gap-1.5 mt-1">
                   <Avatar url={post.users?.avatar_url ?? null} nickname={post.users?.nickname ?? ''} size={6} />
-                  <span className="text-xs text-zinc-300 font-medium truncate max-w-[5rem] sm:max-w-none">{post.users?.nickname ?? '알 수 없음'}</span>
+                  <span className="text-xs text-zinc-300 font-medium truncate">{post.users?.nickname ?? '알 수 없음'}</span>
                   <span className="text-zinc-600 flex-shrink-0">·</span>
                   <span className="text-xs text-zinc-500 flex-shrink-0">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
                   <span className="text-xs text-zinc-500 ml-auto flex-shrink-0">💬 {post.commentCount}</span>

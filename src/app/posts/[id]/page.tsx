@@ -9,6 +9,7 @@ import LikeButton from '@/components/LikeButton'
 import Link from 'next/link'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
+import UserProfileModal from '@/components/UserProfileModal'
 
 interface Post {
   id: number
@@ -28,6 +29,7 @@ export default function PostDetailPage() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [prevPost, setPrevPost] = useState<{ id: number; title: string } | null>(null)
   const [nextPost, setNextPost] = useState<{ id: number; title: string } | null>(null)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -82,6 +84,7 @@ export default function PostDetailPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
+      {profileUserId && <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />}
       <Navbar />
 
       <div className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
@@ -134,15 +137,15 @@ export default function PostDetailPage() {
           )}
 
           <div className="flex items-center gap-2 border-t border-zinc-700 pt-3">
-            <div className="relative w-9 h-9 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
+            <button type="button" onClick={() => setProfileUserId(post.user_id)} className="relative w-9 h-9 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0 hover:opacity-80 transition-opacity">
               {post.users?.avatar_url ? (
                 <Image src={post.users.avatar_url} alt={post.users.nickname} fill className="object-cover" unoptimized />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-zinc-400 text-lg">👤</div>
               )}
-            </div>
+            </button>
             <div className="flex flex-col">
-              <span className="text-zinc-200 font-medium">{post.users?.nickname ?? '알 수 없음'}</span>
+              <button type="button" onClick={() => setProfileUserId(post.user_id)} className="text-zinc-200 font-medium hover:text-white transition-colors text-left">{post.users?.nickname ?? '알 수 없음'}</button>
               <span className="text-zinc-500 text-sm">{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
             </div>
           </div>

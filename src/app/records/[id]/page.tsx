@@ -9,6 +9,7 @@ import { notifyAll } from '@/lib/notifications'
 import Image from 'next/image'
 import Link from 'next/link'
 import { extractYoutubeId } from '@/lib/youtube'
+import UserProfileModal from '@/components/UserProfileModal'
 
 interface RecordPost {
   id: number
@@ -43,6 +44,7 @@ export default function RecordDetailPage() {
   const [nextPost, setNextPost] = useState<{ id: number; title: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedImg, setSelectedImg] = useState<string | null>(null)
+  const [profileUserId, setProfileUserId] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -105,6 +107,7 @@ export default function RecordDetailPage() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
+      {profileUserId && <UserProfileModal userId={profileUserId} onClose={() => setProfileUserId(null)} />}
       <Navbar />
       <section className="max-w-2xl w-full mx-auto px-4 py-8 flex flex-col gap-6">
         {/* 헤더 */}
@@ -146,7 +149,7 @@ export default function RecordDetailPage() {
           <div className="flex flex-wrap gap-3 text-sm text-zinc-400 border-t border-zinc-700 pt-3">
             <span>📅 {new Date(post.record_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             <span>📍 {post.location}</span>
-            <span>· {post.users?.nickname}</span>
+            <button type="button" onClick={() => setProfileUserId(post.created_by)} className="hover:text-white transition-colors">· {post.users?.nickname}</button>
           </div>
         </div>
 

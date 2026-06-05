@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import { useFCMToken } from '@/hooks/useFCMToken'
 import { useLastSeen } from '@/hooks/useLastSeen'
+import NameRequiredModal from '@/components/NameRequiredModal'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -43,6 +44,7 @@ export default function Home() {
   const [recentSchedules, setRecentSchedules] = useState<RecentItem[]>([])
   const [recentRecords, setRecentRecords] = useState<RecentItem[]>([])
   const [hasActivePoll, setHasActivePoll] = useState(false)
+  const [showNameModal, setShowNameModal] = useState(false)
 
   useFCMToken(userId)
   useLastSeen(userId)
@@ -52,6 +54,8 @@ export default function Home() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
+      const { data: userRow } = await supabase.from('users').select('name').eq('id', data.user.id).single()
+      if (!userRow?.name) setShowNameModal(true)
 
       const [
         { data: noticeData },
@@ -163,6 +167,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
+      {showNameModal && <NameRequiredModal onClose={() => setShowNameModal(false)} />}
       <Navbar />
 
       <section className="flex-1 max-w-2xl w-full mx-auto px-4 py-10 flex flex-col items-center gap-8">

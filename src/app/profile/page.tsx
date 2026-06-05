@@ -10,6 +10,7 @@ import { useTheme } from '@/components/ThemeProvider'
 interface UserProfile {
   id: string
   nickname: string
+  name: string | null
   email: string
   phone: string | null
   avatar_url: string | null
@@ -24,6 +25,7 @@ export default function ProfilePage() {
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [nickname, setNickname] = useState('')
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -42,6 +44,7 @@ export default function ProfilePage() {
       if (userRow) {
         setProfile(userRow)
         setNickname(userRow.nickname)
+        setName(userRow.name ?? '')
         setPhone(userRow.phone ?? '')
         setAvatarUrl(userRow.avatar_url)
       }
@@ -70,7 +73,7 @@ export default function ProfilePage() {
     setSaving(true)
     setMessage('')
     const supabase = createClient()
-    const { error } = await supabase.from('users').update({ nickname, phone: phone || null }).eq('id', profile.id)
+    const { error } = await supabase.from('users').update({ nickname, name: name || null, phone: phone || null }).eq('id', profile.id)
     setSaving(false)
     setMessage(error ? '저장에 실패했습니다.' : '정보가 저장됐습니다.')
   }
@@ -184,6 +187,10 @@ export default function ProfilePage() {
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-zinc-400">이메일</label>
               <input type="text" value={profile.email} disabled className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-sm text-zinc-500 cursor-not-allowed w-full" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-zinc-300">이름 *</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required placeholder="실명을 입력하세요" className={inputClass} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-zinc-300">닉네임</label>
