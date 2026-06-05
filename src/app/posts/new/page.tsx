@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 export default function NewPostPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
+  const [activeSeason, setActiveSeason] = useState<{ id: number; name: string } | null>(null)
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
@@ -17,9 +18,15 @@ export default function NewPostPage() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
+      const { data: season } = await supabase
+        .from('seasons')
+        .select('id, name')
+        .eq('is_active', true)
+        .maybeSingle()
+      if (season) setActiveSeason(season)
     })
   }, [router])
 
@@ -36,6 +43,7 @@ export default function NewPostPage() {
       artist: artist || null,
       youtube_url: youtubeUrl || null,
       description: description || null,
+      season_id: activeSeason?.id ?? null,
     })
 
     if (error) {
@@ -55,6 +63,15 @@ export default function NewPostPage() {
 
       <div className="max-w-lg w-full mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold text-white mb-6">음악 제안하기</h1>
+        {activeSeason ? (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-sm text-green-400">
+            현재 시즌: <span className="font-semibold">{activeSeason.name}</span>에 자동 등록됩니다.
+          </div>
+        ) : (
+          <div className="mb-4 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-500">
+            현재 활성 시즌이 없습니다. 미분류로 등록됩니다.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">

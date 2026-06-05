@@ -6,6 +6,12 @@ import { extractYoutubeId, getThumbnailUrl } from '@/lib/youtube'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 
+interface Season {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 interface Post {
   id: number
   title: string
@@ -13,6 +19,7 @@ interface Post {
   description: string | null
   youtube_url: string | null
   created_at: string
+  season_id: number | null
   users: { nickname: string; avatar_url: string | null } | null
   likeCount: number
   commentCount: number
@@ -39,17 +46,17 @@ function Avatar({ url, nickname, size = 8 }: { url: string | null; nickname: str
 export default function PostList() {
   const router = useRouter()
   const [posts, setPosts] = useState<Post[]>([])
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>('all')
   const [members, setMembers] = useState<string[]>([])
   const [sort, setSort] = useState<SortType>('latest')
   const [selectedMember, setSelectedMember] = useState<string>('all')
 
-  // 입력값 state
   const [searchType, setSearchType] = useState<SearchType>('title')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  // 적용된 검색 state
   const [appliedSearchType, setAppliedSearchType] = useState<SearchType>('title')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [appliedDateFrom, setAppliedDateFrom] = useState('')
@@ -73,21 +80,30 @@ export default function PostList() {
     setCurrentPage(1)
   }
 
-  async function fetchPosts() {
+  async function fetchData() {
     const supabase = createClient()
+
+    const { data: seasonData } = await supabase
+      .from('seasons')
+      .select('id, name, is_active')
+      .order('started_at', { ascending: true })
+
+    const fetchedSeasons: Season[] = (seasonData ?? []) as Season[]
+    setSeasons(fetchedSeasons)
+
+    const activeSeason = fetchedSeasons.find(s => s.is_active)
+    if (activeSeason) {
+      setSelectedSeason(activeSeason.id)
+    }
+
     const { data: postsData } = await supabase
       .from('posts')
       .select('*, users(nickname, avatar_url)')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
-    const { data: likesData } = await supabase
-      .from('likes')
-      .select('post_id, is_like')
-
-    const { data: commentsData } = await supabase
-      .from('comments')
-      .select('post_id')
+    const { data: likesData } = await supabase.from('likes').select('post_id, is_like')
+    const { data: commentsData } = await supabase.from('comments').select('post_id')
 
     const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(post => ({
       ...post,
@@ -100,18 +116,28 @@ export default function PostList() {
   }
 
   useEffect(() => {
-    fetchPosts()
+    fetchData()
     const supabase = createClient()
     const channel = supabase
       .channel('posts-list')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchPosts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchPosts)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, fetchPosts)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, fetchData)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  function handleSeasonChange(val: number | 'all' | 'none') {
+    setSelectedSeason(val)
+    setCurrentPage(1)
+  }
+
   const filtered = posts
+    .filter(post => {
+      if (selectedSeason === 'none') return post.season_id === null
+      if (selectedSeason !== 'all') return post.season_id === selectedSeason
+      return true
+    })
     .filter(post => {
       const target = appliedSearchType === 'title' ? post.title : (post.artist ?? '')
       const matchSearch = !appliedSearch || target.replace(/\s/g, '').toLowerCase().includes(appliedSearch.replace(/\s/g, '').toLowerCase())
@@ -130,8 +156,45 @@ export default function PostList() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 
+  const tabClass = (active: boolean) =>
+    `px-3 py-1.5 rounded-lg border text-sm whitespace-nowrap transition-colors flex-shrink-0 ${
+      active
+        ? 'bg-zinc-700 border-zinc-500 text-white'
+        : 'bg-transparent border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+    }`
+
   return (
     <div className="flex flex-col gap-4">
+      {/* 시즌 탭 */}
+      {seasons.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          <button
+            onClick={() => handleSeasonChange('all')}
+            className={tabClass(selectedSeason === 'all')}
+          >
+            전체
+          </button>
+          {seasons.map(s => (
+            <button
+              key={s.id}
+              onClick={() => handleSeasonChange(s.id)}
+              className={`${tabClass(selectedSeason === s.id)} ${s.is_active ? 'relative' : ''}`}
+            >
+              {s.name}
+              {s.is_active && (
+                <span className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-green-400 align-middle" />
+              )}
+            </button>
+          ))}
+          <button
+            onClick={() => handleSeasonChange('none')}
+            className={tabClass(selectedSeason === 'none')}
+          >
+            미분류
+          </button>
+        </div>
+      )}
+
       {/* 검색 + 필터 */}
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
@@ -266,7 +329,6 @@ export default function PostList() {
         })}
       </ul>
 
-      {/* 페이지네이션 */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-1 pt-2">
           <button
