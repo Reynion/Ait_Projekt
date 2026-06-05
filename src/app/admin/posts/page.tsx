@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 interface Season {
@@ -29,7 +30,10 @@ interface PostRow {
   likes: { is_like: boolean }[]
 }
 
-export default function AdminPosts() {
+function AdminPostsContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [posts, setPosts] = useState<PostRow[]>([])
   const [seasons, setSeasons] = useState<Season[]>([])
   const [comments, setComments] = useState<Record<number, Comment[]>>({})
@@ -37,7 +41,13 @@ export default function AdminPosts() {
   const [loadingComments, setLoadingComments] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const [seasonTab, setSeasonTab] = useState<number | 'all' | 'none'>('all')
+  const [seasonTab, setSeasonTab] = useState<number | 'all' | 'none'>(() => {
+    const s = searchParams.get('season')
+    if (!s || s === 'all') return 'all'
+    if (s === 'none') return 'none'
+    const n = parseInt(s)
+    return isNaN(n) ? 'all' : n
+  })
   const [searchText, setSearchText] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [sort, setSort] = useState<'newest' | 'likes'>('newest')
@@ -50,14 +60,35 @@ export default function AdminPosts() {
         .select('id, title, artist, description, created_at, season_id, seasons(name), users(nickname), likes(is_like)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false }),
-      supabase.from('seasons').select('id, name, is_active').order('started_at', { ascending: true }),
+      supabase
+        .from('seasons')
+        .select('id, name, is_active')
+        .order('is_active', { ascending: false })
+        .order('started_at', { ascending: false }),
     ])
     if (postsData) setPosts(postsData as unknown as PostRow[])
-    if (seasonsData) setSeasons(seasonsData as Season[])
+    if (seasonsData) {
+      setSeasons(seasonsData as Season[])
+      const urlSeason = new URLSearchParams(window.location.search).get('season')
+      if (!urlSeason) {
+        const active = (seasonsData as Season[]).find(s => s.is_active)
+        if (active) {
+          setSeasonTab(active.id)
+          router.replace(`${pathname}?season=${active.id}`, { scroll: false })
+        }
+      }
+    }
     setLoading(false)
   }
 
   useEffect(() => { fetchData() }, [])
+
+  function handleSeasonTabChange(val: number | 'all' | 'none') {
+    setSeasonTab(val)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('season', String(val))
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
+  }
 
   async function toggleComments(postId: number) {
     if (expanded === postId) { setExpanded(null); return }
@@ -124,7 +155,7 @@ export default function AdminPosts() {
       {/* 시즌 탭 */}
       <div className="flex gap-2 flex-wrap">
         <button
-          onClick={() => setSeasonTab('all')}
+          onClick={() => handleSeasonTabChange('all')}
           className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${seasonTab === 'all' ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
         >
           전체
@@ -132,7 +163,7 @@ export default function AdminPosts() {
         {seasons.map(s => (
           <button
             key={s.id}
-            onClick={() => setSeasonTab(s.id)}
+            onClick={() => handleSeasonTabChange(s.id)}
             className={`text-sm px-3 py-1.5 rounded-full border transition-colors flex items-center gap-1.5 ${seasonTab === s.id ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
           >
             {s.is_active && <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />}
@@ -140,7 +171,7 @@ export default function AdminPosts() {
           </button>
         ))}
         <button
-          onClick={() => setSeasonTab('none')}
+          onClick={() => handleSeasonTabChange('none')}
           className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${seasonTab === 'none' ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
         >
           미분류
@@ -254,5 +285,13 @@ export default function AdminPosts() {
         ))}
       </div>
     </div>
+  )
+}
+
+export default function AdminPosts() {
+  return (
+    <Suspense fallback={<p className="text-zinc-400">불러오는 중...</p>}>
+      <AdminPostsContent />
+    </Suspense>
   )
 }

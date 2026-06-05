@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -35,7 +35,9 @@ export default function PostsPage() {
             + 제안하기
           </Link>
         </div>
-        <PostList />
+        <Suspense fallback={<p className="text-zinc-400">불러오는 중...</p>}>
+          <PostList />
+        </Suspense>
       </section>
     </main>
   )

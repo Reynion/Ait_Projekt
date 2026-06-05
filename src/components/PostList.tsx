@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { extractYoutubeId, getThumbnailUrl } from '@/lib/youtube'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 
 interface Season {
   id: number
@@ -45,9 +45,17 @@ function Avatar({ url, nickname, size = 8 }: { url: string | null; nickname: str
 
 export default function PostList() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [posts, setPosts] = useState<Post[]>([])
   const [seasons, setSeasons] = useState<Season[]>([])
-  const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>('all')
+  const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>(() => {
+    const s = searchParams.get('season')
+    if (!s || s === 'all') return 'all'
+    if (s === 'none') return 'none'
+    const n = parseInt(s)
+    return isNaN(n) ? 'all' : n
+  })
   const [members, setMembers] = useState<string[]>([])
   const [sort, setSort] = useState<SortType>('latest')
   const [selectedMember, setSelectedMember] = useState<string>('all')
@@ -86,14 +94,19 @@ export default function PostList() {
     const { data: seasonData } = await supabase
       .from('seasons')
       .select('id, name, is_active')
-      .order('started_at', { ascending: true })
+      .order('is_active', { ascending: false })
+      .order('started_at', { ascending: false })
 
     const fetchedSeasons: Season[] = (seasonData ?? []) as Season[]
     setSeasons(fetchedSeasons)
 
-    const activeSeason = fetchedSeasons.find(s => s.is_active)
-    if (activeSeason) {
-      setSelectedSeason(activeSeason.id)
+    const urlSeason = new URLSearchParams(window.location.search).get('season')
+    if (!urlSeason) {
+      const activeSeason = fetchedSeasons.find(s => s.is_active)
+      if (activeSeason) {
+        setSelectedSeason(activeSeason.id)
+        router.replace(`${pathname}?season=${activeSeason.id}`, { scroll: false })
+      }
     }
 
     const { data: postsData } = await supabase
@@ -130,6 +143,9 @@ export default function PostList() {
   function handleSeasonChange(val: number | 'all' | 'none') {
     setSelectedSeason(val)
     setCurrentPage(1)
+    const params = new URLSearchParams(searchParams.toString())
+    params.set('season', String(val))
+    router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
   const filtered = posts
