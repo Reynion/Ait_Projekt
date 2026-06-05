@@ -280,7 +280,7 @@ export default function EditBoardPostPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium text-zinc-300">내용</label>
+                  <label className="text-sm font-medium text-zinc-300">내용 *</label>
                   <textarea
                     value={musicIntro}
                     onChange={e => setMusicIntro(e.target.value)}
