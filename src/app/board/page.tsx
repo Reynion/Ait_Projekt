@@ -261,14 +261,11 @@ export default function BoardPage() {
                   <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       {post.post_type === 'music' && (
-                        <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 음악</span>
+                        <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
                       )}
                       <h3 className="font-semibold text-white truncate">{post.title}</h3>
                     </div>
-                    {post.post_type === 'music'
-                      ? <p className="text-sm text-zinc-400">유튜브 {post.music_items?.length ?? 0}곡 공유</p>
-                      : <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
-                    }
+                    <p className="text-sm text-zinc-400 line-clamp-2">{post.content}</p>
                     <div className="flex items-center gap-2 text-xs text-zinc-500 pt-1 border-t border-zinc-700 mt-1">
                       <button
                         type="button"

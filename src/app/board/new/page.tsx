@@ -174,7 +174,7 @@ export default function NewBoardPostPage() {
                 : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500'
             }`}
           >
-            🎵 음악 공유
+            🎵 노래 공유
           </button>
         </div>
 
