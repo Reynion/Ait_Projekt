@@ -5,10 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 
+interface Season {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 export default function NewPostPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
-  const [activeSeason, setActiveSeason] = useState<{ id: number; name: string } | null>(null)
+  const [seasons, setSeasons] = useState<Season[]>([])
+  const [seasonId, setSeasonId] = useState<number | null>(null)
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
@@ -21,12 +28,17 @@ export default function NewPostPage() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
-      const { data: season } = await supabase
+
+      const { data: seasonData } = await supabase
         .from('seasons')
-        .select('id, name')
-        .eq('is_active', true)
-        .maybeSingle()
-      if (season) setActiveSeason(season)
+        .select('id, name, is_active')
+        .order('started_at', { ascending: true })
+
+      const fetchedSeasons: Season[] = (seasonData ?? []) as Season[]
+      setSeasons(fetchedSeasons)
+
+      const active = fetchedSeasons.find(s => s.is_active)
+      if (active) setSeasonId(active.id)
     })
   }, [router])
 
@@ -43,7 +55,7 @@ export default function NewPostPage() {
       artist: artist || null,
       youtube_url: youtubeUrl || null,
       description: description || null,
-      season_id: activeSeason?.id ?? null,
+      season_id: seasonId,
     })
 
     if (error) {
@@ -63,15 +75,6 @@ export default function NewPostPage() {
 
       <div className="max-w-lg w-full mx-auto px-4 py-10">
         <h1 className="text-2xl font-bold text-white mb-6">음악 제안하기</h1>
-        {activeSeason ? (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-sm text-green-400">
-            현재 시즌: <span className="font-semibold">{activeSeason.name}</span>에 자동 등록됩니다.
-          </div>
-        ) : (
-          <div className="mb-4 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-sm text-zinc-500">
-            현재 활성 시즌이 없습니다. 미분류로 등록됩니다.
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
@@ -101,6 +104,24 @@ export default function NewPostPage() {
                 className={`${inputClass} resize-none`}
               />
             </div>
+
+            {seasons.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-zinc-300">시즌</label>
+                <select
+                  value={seasonId ?? ''}
+                  onChange={e => setSeasonId(e.target.value ? Number(e.target.value) : null)}
+                  className={inputClass}
+                >
+                  <option value="">미분류</option>
+                  {seasons.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}{s.is_active ? ' (현재 활성)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>}

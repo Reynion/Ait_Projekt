@@ -5,14 +5,23 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 
+interface Season {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 export default function EditPostPage() {
   const { id } = useParams()
   const router = useRouter()
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [title, setTitle] = useState('')
   const [artist, setArtist] = useState('')
   const [youtubeUrl, setYoutubeUrl] = useState('')
   const [description, setDescription] = useState('')
+  const [seasonId, setSeasonId] = useState<number | null>(null)
+  const [seasons, setSeasons] = useState<Season[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -24,6 +33,10 @@ export default function EditPostPage() {
       if (!user) { router.push('/login'); return }
       setCurrentUserId(user.id)
 
+      const { data: row } = await supabase.from('users').select('role').eq('id', user.id).single()
+      const admin = row?.role === 'admin'
+      if (admin) setIsAdmin(true)
+
       const { data: post } = await supabase
         .from('posts')
         .select('*')
@@ -31,12 +44,20 @@ export default function EditPostPage() {
         .single()
 
       if (!post) { router.push('/posts'); return }
-      if (post.user_id !== user.id) { router.push(`/posts/${id}`); return }
+      if (post.user_id !== user.id && !admin) { router.push(`/posts/${id}`); return }
 
       setTitle(post.title)
       setArtist(post.artist ?? '')
       setYoutubeUrl(post.youtube_url ?? '')
       setDescription(post.description ?? '')
+      setSeasonId(post.season_id ?? null)
+
+      const { data: seasonData } = await supabase
+        .from('seasons')
+        .select('id, name, is_active')
+        .order('started_at', { ascending: true })
+      setSeasons((seasonData ?? []) as Season[])
+
       setLoading(false)
     }
     load()
@@ -56,6 +77,7 @@ export default function EditPostPage() {
         artist: artist || null,
         youtube_url: youtubeUrl || null,
         description: description || null,
+        season_id: seasonId,
       })
       .eq('id', id)
 
@@ -65,7 +87,11 @@ export default function EditPostPage() {
       return
     }
 
-    router.push(`/posts/${id}`)
+    if (isAdmin) {
+      router.push(`/admin/posts/${id}`)
+    } else {
+      router.push(`/posts/${id}`)
+    }
   }
 
   const inputClass = "bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
@@ -111,6 +137,24 @@ export default function EditPostPage() {
                 className={`${inputClass} resize-none`}
               />
             </div>
+
+            {seasons.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-zinc-300">시즌</label>
+                <select
+                  value={seasonId ?? ''}
+                  onChange={e => setSeasonId(e.target.value ? Number(e.target.value) : null)}
+                  className={inputClass}
+                >
+                  <option value="">미분류</option>
+                  {seasons.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}{s.is_active ? ' (현재 활성)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>}
@@ -118,7 +162,7 @@ export default function EditPostPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => router.push(`/posts/${id}`)}
+              onClick={() => isAdmin ? router.push(`/admin/posts/${id}`) : router.push(`/posts/${id}`)}
               className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg py-2.5 text-sm font-medium text-zinc-300 text-center hover:border-zinc-400 hover:text-white transition-colors"
             >
               취소

@@ -100,12 +100,20 @@ export default function AdminBoardDetailPage() {
             )}
             <h1 className="text-xl font-bold text-white min-w-0 break-words">{post.title}</h1>
           </div>
-          <button
-            onClick={handleDeletePost}
-            className="text-sm text-zinc-500 hover:text-red-400 border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg transition-colors flex-shrink-0"
-          >
-            삭제
-          </button>
+          <div className="flex gap-2 flex-shrink-0">
+            <Link
+              href={`/board/${post.id}/edit`}
+              className="text-sm text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-3 py-1 rounded-lg transition-colors"
+            >
+              수정
+            </Link>
+            <button
+              onClick={handleDeletePost}
+              className="text-sm text-zinc-500 hover:text-red-400 border border-zinc-700 hover:border-red-500 px-3 py-1 rounded-lg transition-colors"
+            >
+              삭제
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 pb-3 border-b border-zinc-700">
