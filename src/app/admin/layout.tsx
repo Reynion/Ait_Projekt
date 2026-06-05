@@ -78,7 +78,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <div className="flex flex-1">
         {/* 데스크톱 사이드바 */}
-        <aside className="hidden md:flex w-48 bg-zinc-900 border-r border-zinc-700 flex-col gap-1 p-4">
+        <aside className="hidden md:flex w-48 flex-shrink-0 bg-zinc-900 border-r border-zinc-700 flex-col gap-1 p-4">
           <p className="text-xs text-zinc-500 font-semibold uppercase mb-3">메뉴</p>
           {ADMIN_MENUS.map(m => (
             <Link key={m.href} href={m.href} className="text-sm text-zinc-300 hover:text-white px-2 py-1.5 rounded hover:bg-zinc-800 transition-colors">
@@ -87,7 +87,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ))}
         </aside>
 
-        <main className="flex-1 p-4 md:p-8 bg-zinc-950 text-white">
+        <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-8 bg-zinc-950 text-white">
           {children}
         </main>
       </div>
