@@ -204,12 +204,12 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder={replyTarget ? '답글을 입력하세요...' : '댓글을 입력하세요...'}
-              className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+              className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
             />
             <button
               type="submit"
               disabled={submitting || !content.trim()}
-              className="bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 disabled:opacity-50 transition-colors"
+              className="flex-shrink-0 bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 disabled:opacity-50 transition-colors"
             >
               등록
             </button>

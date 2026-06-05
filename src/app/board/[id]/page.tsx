@@ -30,6 +30,7 @@ interface BoardPost {
   is_notice: boolean
   post_type: string | null
   music_items: MusicItem[] | null
+  music_outro: string | null
   users: { nickname: string; avatar_url: string | null } | null
 }
 
@@ -165,6 +166,9 @@ export default function BoardPostDetailPage() {
 
           {post.post_type === 'music' && post.music_items && post.music_items.length > 0 ? (
             <div className="flex flex-col gap-6">
+              {post.content && (
+                <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>
+              )}
               {post.music_items.map((item, idx) => (
                 <div key={idx} className="flex flex-col gap-2">
                   <span className="text-xs font-medium text-zinc-400">🎵 {idx + 1}번 곡</span>
@@ -183,6 +187,9 @@ export default function BoardPostDetailPage() {
                   )}
                 </div>
               ))}
+              {post.music_outro && (
+                <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap border-t border-zinc-700 pt-4">{post.music_outro}</p>
+              )}
             </div>
           ) : (
             <p className="text-zinc-200 text-sm leading-relaxed whitespace-pre-wrap">{post.content}</p>

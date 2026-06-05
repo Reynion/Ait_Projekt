@@ -33,7 +33,9 @@ export default function EditBoardPostPage() {
   const [newPreviews, setNewPreviews] = useState<(string | null)[]>([])
 
   const [musicTitle, setMusicTitle] = useState('')
+  const [musicIntro, setMusicIntro] = useState('')
   const [musicItems, setMusicItems] = useState<MusicItem[]>([{ youtube_url: '', comment: '' }])
+  const [musicOutro, setMusicOutro] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -63,7 +65,9 @@ export default function EditBoardPostPage() {
 
       if (type === 'music') {
         setMusicTitle(post.title)
+        setMusicIntro(post.content ?? '')
         setMusicItems(post.music_items ?? [{ youtube_url: '', comment: '' }])
+        setMusicOutro(post.music_outro ?? '')
       } else {
         setTitle(post.title)
         setContent(post.content)
@@ -152,7 +156,7 @@ export default function EditBoardPostPage() {
 
       const { error } = await supabase
         .from('board_posts')
-        .update({ title: musicTitle, music_items: validItems })
+        .update({ title: musicTitle, content: musicIntro, music_outro: musicOutro, music_items: validItems })
         .eq('id', id)
 
       if (error) { setError('저장에 실패했습니다.'); setSaving(false); return }
@@ -264,7 +268,7 @@ export default function EditBoardPostPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-zinc-300">제목 *</label>
                   <input
@@ -273,6 +277,16 @@ export default function EditBoardPostPage() {
                     onChange={e => setMusicTitle(e.target.value)}
                     required
                     className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-zinc-300">내용</label>
+                  <textarea
+                    value={musicIntro}
+                    onChange={e => setMusicIntro(e.target.value)}
+                    rows={4}
+                    placeholder="곡 소개 전 내용을 입력하세요..."
+                    className={`${inputClass} resize-none`}
                   />
                 </div>
               </div>
@@ -332,6 +346,19 @@ export default function EditBoardPostPage() {
               >
                 + 곡 추가
               </button>
+
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-zinc-300">마무리 내용</label>
+                  <textarea
+                    value={musicOutro}
+                    onChange={e => setMusicOutro(e.target.value)}
+                    rows={4}
+                    placeholder="마무리 내용을 입력하세요..."
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

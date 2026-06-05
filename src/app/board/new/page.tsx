@@ -32,7 +32,9 @@ export default function NewBoardPostPage() {
   const [previews, setPreviews] = useState<(string | null)[]>([])
 
   const [musicTitle, setMusicTitle] = useState('')
+  const [musicIntro, setMusicIntro] = useState('')
   const [musicItems, setMusicItems] = useState<MusicItem[]>([{ youtube_url: '', comment: '' }])
+  const [musicOutro, setMusicOutro] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -128,7 +130,8 @@ export default function NewBoardPostPage() {
       const { error } = await supabase.from('board_posts').insert({
         user_id: userId,
         title: musicTitle,
-        content: '',
+        content: musicIntro,
+        music_outro: musicOutro,
         image_urls: [],
         is_notice: false,
         post_type: 'music',
@@ -251,7 +254,7 @@ export default function NewBoardPostPage() {
             </div>
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium text-zinc-300">제목 *</label>
                   <input
@@ -261,6 +264,16 @@ export default function NewBoardPostPage() {
                     required
                     placeholder="제목을 입력하세요"
                     className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-zinc-300">내용</label>
+                  <textarea
+                    value={musicIntro}
+                    onChange={e => setMusicIntro(e.target.value)}
+                    rows={4}
+                    placeholder="곡 소개 전 내용을 입력하세요..."
+                    className={`${inputClass} resize-none`}
                   />
                 </div>
               </div>
@@ -320,6 +333,19 @@ export default function NewBoardPostPage() {
               >
                 + 곡 추가
               </button>
+
+              <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-zinc-300">마무리 내용</label>
+                  <textarea
+                    value={musicOutro}
+                    onChange={e => setMusicOutro(e.target.value)}
+                    rows={4}
+                    placeholder="마무리 내용을 입력하세요..."
+                    className={`${inputClass} resize-none`}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
