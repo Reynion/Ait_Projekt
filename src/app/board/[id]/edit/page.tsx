@@ -162,7 +162,7 @@ export default function EditBoardPostPage() {
       if (error) { setError('저장에 실패했습니다.'); setSaving(false); return }
     }
 
-    router.push(`/board/${id}`)
+    router.push(isAdmin ? `/admin/board/${id}` : `/board/${id}`)
   }
 
   const inputClass = "bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
@@ -368,7 +368,7 @@ export default function EditBoardPostPage() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => router.push(`/board/${id}`)}
+              onClick={() => router.push(isAdmin ? `/admin/board/${id}` : `/board/${id}`)}
               className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg py-2.5 text-sm font-medium text-zinc-300 hover:border-zinc-400 hover:text-white transition-colors"
             >
               취소

@@ -107,7 +107,7 @@ export default function RecordEditPage() {
     }).eq('id', id)
 
     if (updateErr) { setError('수정에 실패했습니다.'); setLoading(false); return }
-    router.push(`/records/${id}`)
+    router.push(isAdmin ? '/admin/records' : `/records/${id}`)
   }
 
   const inputClass = "bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400 w-full"
@@ -213,7 +213,7 @@ export default function RecordEditPage() {
           {error && <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">{error}</p>}
 
           <div className="flex gap-3">
-            <button type="button" onClick={() => router.push(`/records/${id}`)} className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg py-2.5 text-sm font-medium text-zinc-300 hover:border-zinc-400 hover:text-white transition-colors">취소</button>
+            <button type="button" onClick={() => router.push(isAdmin ? '/admin/records' : `/records/${id}`)} className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg py-2.5 text-sm font-medium text-zinc-300 hover:border-zinc-400 hover:text-white transition-colors">취소</button>
             <button type="submit" disabled={loading || !form.title.trim() || !form.record_date || !form.location.trim()} className="flex-1 bg-zinc-100 text-zinc-900 rounded-lg py-2.5 text-sm font-semibold hover:bg-white disabled:opacity-50 transition-colors">
               {loading ? '저장 중...' : '수정 완료'}
             </button>

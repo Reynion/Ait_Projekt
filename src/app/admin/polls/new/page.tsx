@@ -210,7 +210,7 @@ export default function NewPollPage() {
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && applySearch()}
                 placeholder="곡 제목 / 아티스트 검색..."
-                className="flex-1 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+                className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
               />
               <button
                 type="button"
