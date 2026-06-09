@@ -5,10 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { notifyAll } from '@/lib/notifications'
 
+interface Season {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 interface Post {
   id: number
   title: string
   artist: string | null
+  season_id: number | null
   users: { nickname: string } | null
 }
 
@@ -26,40 +33,61 @@ export default function NewPollPage() {
   const router = useRouter()
   const [form, setForm] = useState(EMPTY_FORM)
   const [posts, setPosts] = useState<Post[]>([])
+  const [seasons, setSeasons] = useState<Season[]>([])
   const [members, setMembers] = useState<string[]>([])
   const [search, setSearch] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState<string>('all')
+  const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>('all')
   const [selectedPostIds, setSelectedPostIds] = useState<number[]>([])
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase
-      .from('music_posts')
-      .select('id, title, artist, users(nickname)')
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        const rows = (data ?? []) as unknown as Post[]
-        setPosts(rows)
-        const uniqueMembers = Array.from(
-          new Set(rows.map(p => p.users?.nickname).filter(Boolean) as string[])
-        )
-        setMembers(uniqueMembers)
-      })
+    async function load() {
+      const { data: seasonData } = await supabase
+        .from('seasons')
+        .select('id, name, is_active')
+        .order('is_active', { ascending: false })
+        .order('started_at', { ascending: false })
+      const fetchedSeasons = (seasonData ?? []) as Season[]
+      setSeasons(fetchedSeasons)
+      const active = fetchedSeasons.find(s => s.is_active)
+      if (active) setSelectedSeason(active.id)
+
+      const { data } = await supabase
+        .from('music_posts')
+        .select('id, title, artist, season_id, users(nickname)')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+      const rows = (data ?? []) as unknown as Post[]
+      setPosts(rows)
+      setMembers(Array.from(new Set(rows.map(p => p.users?.nickname).filter(Boolean) as string[])))
+    }
+    load()
   }, [])
 
   function applySearch() {
     setAppliedSearch(search)
   }
 
+  const seasonTabs = [
+    { key: 'all' as const, label: '전체' },
+    ...seasons.filter(s => s.is_active).map(s => ({ key: s.id as number | 'all' | 'none', label: s.name })),
+    ...seasons.filter(s => !s.is_active).map(s => ({ key: s.id as number | 'all' | 'none', label: s.name })),
+    { key: 'none' as const, label: '미분류' },
+  ]
+
   const filtered = posts.filter(post => {
+    const matchSeason =
+      selectedSeason === 'all' ||
+      (selectedSeason === 'none' ? post.season_id === null : post.season_id === selectedSeason)
     const matchSearch =
       !appliedSearch ||
       post.title.toLowerCase().includes(appliedSearch.toLowerCase()) ||
       (post.artist ?? '').toLowerCase().includes(appliedSearch.toLowerCase())
     const matchMember = selectedMember === 'all' || post.users?.nickname === selectedMember
-    return matchSearch && matchMember
+    return matchSeason && matchSearch && matchMember
   })
 
   function togglePost(postId: number) {
@@ -159,6 +187,19 @@ export default function NewPollPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">후보곡 선택</h2>
             <span className="text-sm text-zinc-400">{selectedPostIds.length}곡 선택됨</span>
+          </div>
+
+          <div className="flex gap-1.5 flex-wrap">
+            {seasonTabs.map(tab => (
+              <button
+                key={String(tab.key)}
+                type="button"
+                onClick={() => setSelectedSeason(tab.key)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${selectedSeason === tab.key ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-col gap-2">

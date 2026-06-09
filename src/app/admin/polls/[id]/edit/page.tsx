@@ -4,10 +4,17 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
+interface Season {
+  id: number
+  name: string
+  is_active: boolean
+}
+
 interface Post {
   id: number
   title: string
   artist: string | null
+  season_id: number | null
   users: { nickname: string } | null
 }
 
@@ -26,10 +33,12 @@ export default function EditPollPage() {
     show_results: true,
   })
   const [posts, setPosts] = useState<Post[]>([])
+  const [seasons, setSeasons] = useState<Season[]>([])
   const [members, setMembers] = useState<string[]>([])
   const [search, setSearch] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState('all')
+  const [selectedSeason, setSelectedSeason] = useState<number | 'all' | 'none'>('all')
   const [selectedPostIds, setSelectedPostIds] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -55,9 +64,20 @@ export default function EditPollPage() {
         .eq('poll_id', id)
       setSelectedPostIds((candidates ?? []).map(c => c.post_id))
 
+      const { data: seasonData } = await supabase
+        .from('seasons')
+        .select('id, name, is_active')
+        .order('is_active', { ascending: false })
+        .order('started_at', { ascending: false })
+      const fetchedSeasons = (seasonData ?? []) as Season[]
+      setSeasons(fetchedSeasons)
+      const active = fetchedSeasons.find(s => s.is_active)
+      if (active) setSelectedSeason(active.id)
+
       const { data: postsData } = await supabase
         .from('music_posts')
-        .select('id, title, artist, users(nickname)')
+        .select('id, title, artist, season_id, users(nickname)')
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
       const rows = (postsData ?? []) as unknown as Post[]
       setPosts(rows)
@@ -71,13 +91,23 @@ export default function EditPollPage() {
     setAppliedSearch(search)
   }
 
+  const seasonTabs = [
+    { key: 'all' as const, label: '전체' },
+    ...seasons.filter(s => s.is_active).map(s => ({ key: s.id as number | 'all' | 'none', label: s.name })),
+    ...seasons.filter(s => !s.is_active).map(s => ({ key: s.id as number | 'all' | 'none', label: s.name })),
+    { key: 'none' as const, label: '미분류' },
+  ]
+
   const filtered = posts.filter(post => {
+    const matchSeason =
+      selectedSeason === 'all' ||
+      (selectedSeason === 'none' ? post.season_id === null : post.season_id === selectedSeason)
     const matchSearch =
       !appliedSearch ||
       post.title.toLowerCase().includes(appliedSearch.toLowerCase()) ||
       (post.artist ?? '').toLowerCase().includes(appliedSearch.toLowerCase())
     const matchMember = selectedMember === 'all' || post.users?.nickname === selectedMember
-    return matchSearch && matchMember
+    return matchSeason && matchSearch && matchMember
   })
 
   function togglePost(postId: number) {
@@ -195,6 +225,19 @@ export default function EditPollPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">후보곡</h2>
             <span className="text-sm text-zinc-400">{selectedPostIds.length}곡 선택됨</span>
+          </div>
+
+          <div className="flex gap-1.5 flex-wrap">
+            {seasonTabs.map(tab => (
+              <button
+                key={String(tab.key)}
+                type="button"
+                onClick={() => setSelectedSeason(tab.key)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${selectedSeason === tab.key ? 'bg-zinc-100 text-zinc-900 border-zinc-100' : 'border-zinc-600 text-zinc-400 hover:border-zinc-400'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           <div className="flex flex-col gap-2">
