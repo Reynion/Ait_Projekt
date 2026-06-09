@@ -27,7 +27,7 @@ interface PostRow {
   season_id: number | null
   seasons: { name: string } | null
   users: { nickname: string } | null
-  likes: { is_like: boolean }[]
+  music_likes: { is_like: boolean }[]
 }
 
 function AdminPostsContent() {
@@ -69,7 +69,7 @@ function AdminPostsContent() {
     const [{ data: postsData }, { data: seasonsData }] = await Promise.all([
       supabase
         .from('music_posts')
-        .select('id, title, artist, description, created_at, season_id, seasons(name), users(nickname), likes(is_like)')
+        .select('id, title, artist, description, created_at, season_id, seasons(name), users(nickname), music_likes(is_like)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false }),
       supabase
@@ -159,7 +159,7 @@ function AdminPostsContent() {
         (p.users?.nickname ?? '').replace(/\s/g, '').toLowerCase().includes(q)
       )
     }
-    if (sort === 'likes') list.sort((a, b) => b.likes.filter(l => l.is_like).length - a.likes.filter(l => l.is_like).length)
+    if (sort === 'likes') list.sort((a, b) => b.music_likes.filter(l => l.is_like).length - a.music_likes.filter(l => l.is_like).length)
     return list
   }, [posts, seasonTab, appliedSearch, sort])
 
@@ -215,8 +215,8 @@ function AdminPostsContent() {
                   <span>·</span>
                   <span>{new Date(post.created_at).toLocaleDateString('ko-KR')}</span>
                   <span>·</span>
-                  <span>👍 {post.likes.filter(l => l.is_like).length}</span>
-                  <span>👎 {post.likes.filter(l => !l.is_like).length}</span>
+                  <span>👍 {post.music_likes.filter(l => l.is_like).length}</span>
+                  <span>👎 {post.music_likes.filter(l => !l.is_like).length}</span>
                 </div>
               </div>
               <div className="flex gap-2 flex-shrink-0">
