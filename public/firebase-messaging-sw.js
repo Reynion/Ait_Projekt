@@ -13,12 +13,13 @@ firebase.initializeApp({
 const messaging = firebase.messaging()
 
 messaging.onBackgroundMessage(payload => {
-  const { title, body, icon, link } = payload.data ?? {}
-  self.registration.showNotification(title ?? 'Ait 놀이터', {
-    body: body ?? '',
-    icon: icon ?? '/icon.png',
+  const link = payload.data?.link ?? '/'
+  const n = payload.notification ?? {}
+  self.registration.showNotification(n.title ?? 'Ait 놀이터', {
+    body: n.body ?? '',
+    icon: n.icon ?? '/icon.png',
     badge: '/icon.png',
-    data: { link: link ?? '/' },
+    data: { link },
   })
 })
 

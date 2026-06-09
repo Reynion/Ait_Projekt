@@ -21,7 +21,7 @@ export default function AdminDashboard() {
     async function fetchStats() {
       const [u, p, b, po, s, r] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        supabase.from('music_posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
         supabase.from('board_posts').select('id', { count: 'exact', head: true }).is('deleted_at', null),
         supabase.from('polls').select('id', { count: 'exact', head: true }).is('deleted_at', null),
         supabase.from('schedules').select('id', { count: 'exact', head: true }).is('deleted_at', null),

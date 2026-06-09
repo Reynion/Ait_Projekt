@@ -21,7 +21,7 @@ export default function LikeButton({ postId, currentUserId }: Props) {
   async function fetchLikes() {
     const supabase = createClient()
     const { data } = await supabase
-      .from('likes')
+      .from('music_likes')
       .select('user_id, is_like')
       .eq('post_id', postId)
 
@@ -37,7 +37,7 @@ export default function LikeButton({ postId, currentUserId }: Props) {
     const supabase = createClient()
     const channel = supabase
       .channel(`likes-${postId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchLikes)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'music_likes' }, fetchLikes)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [postId, currentUserId])
@@ -73,14 +73,14 @@ export default function LikeButton({ postId, currentUserId }: Props) {
     let error = null
 
     if (summary.myVote === isLike) {
-      const res = await supabase.from('likes').delete()
+      const res = await supabase.from('music_likes').delete()
         .eq('post_id', postId).eq('user_id', currentUserId)
       error = res.error
     } else if (summary.myVote === null) {
-      const res = await supabase.from('likes').insert({ post_id: postId, user_id: currentUserId, is_like: isLike })
+      const res = await supabase.from('music_likes').insert({ post_id: postId, user_id: currentUserId, is_like: isLike })
       error = res.error
     } else {
-      const res = await supabase.from('likes').update({ is_like: isLike })
+      const res = await supabase.from('music_likes').update({ is_like: isLike })
         .eq('post_id', postId).eq('user_id', currentUserId)
       error = res.error
     }

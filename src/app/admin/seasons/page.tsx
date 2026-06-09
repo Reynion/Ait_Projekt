@@ -28,7 +28,7 @@ export default function AdminSeasons() {
       .order('created_at', { ascending: false })
 
     const { data: postData } = await supabase
-      .from('posts')
+      .from('music_posts')
       .select('season_id')
       .is('deleted_at', null)
 
@@ -61,7 +61,7 @@ export default function AdminSeasons() {
   async function handleDelete(season: Season) {
     if (!confirm(`"${season.name}" 시즌을 삭제하시겠습니까?\n해당 시즌에 속한 글은 미분류로 변경됩니다.`)) return
     const supabase = createClient()
-    await supabase.from('posts').update({ season_id: null }).eq('season_id', season.id)
+    await supabase.from('music_posts').update({ season_id: null }).eq('season_id', season.id)
     await supabase.from('seasons').delete().eq('id', season.id)
     setSeasons(prev => prev.filter(s => s.id !== season.id))
   }

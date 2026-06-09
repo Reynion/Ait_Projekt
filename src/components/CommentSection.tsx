@@ -68,7 +68,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
   async function fetchComments() {
     const supabase = createClient()
     const { data } = await supabase
-      .from('comments')
+      .from('music_comments')
       .select('*, users(nickname, avatar_url)')
       .eq('post_id', postId)
       .is('deleted_at', null)
@@ -81,7 +81,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
     fetchComments()
     const channel = supabase
       .channel(`comments-${postId}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, fetchComments)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'music_comments' }, fetchComments)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [postId])
@@ -107,7 +107,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
     if (!content.trim()) return
     setSubmitting(true)
     const supabase = createClient()
-    await supabase.from('comments').insert({
+    await supabase.from('music_comments').insert({
       post_id: postId,
       user_id: currentUserId,
       content: content.trim(),
@@ -131,7 +131,7 @@ export default function CommentSection({ postId, currentUserId, postAuthorId, li
 
   async function handleDelete(commentId: number) {
     const supabase = createClient()
-    const { error } = await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
+    const { error } = await supabase.from('music_comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     if (!error) fetchComments()
   }
 

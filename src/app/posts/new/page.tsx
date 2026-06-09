@@ -49,7 +49,7 @@ export default function NewPostPage() {
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.from('posts').insert({
+    const { error } = await supabase.from('music_posts').insert({
       user_id: userId,
       title,
       artist: artist || null,

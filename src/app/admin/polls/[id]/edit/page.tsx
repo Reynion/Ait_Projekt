@@ -56,7 +56,7 @@ export default function EditPollPage() {
       setSelectedPostIds((candidates ?? []).map(c => c.post_id))
 
       const { data: postsData } = await supabase
-        .from('posts')
+        .from('music_posts')
         .select('id, title, artist, users(nickname)')
         .order('created_at', { ascending: false })
       const rows = (postsData ?? []) as unknown as Post[]

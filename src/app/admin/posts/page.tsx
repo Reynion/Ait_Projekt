@@ -68,7 +68,7 @@ function AdminPostsContent() {
     const supabase = createClient()
     const [{ data: postsData }, { data: seasonsData }] = await Promise.all([
       supabase
-        .from('posts')
+        .from('music_posts')
         .select('id, title, artist, description, created_at, season_id, seasons(name), users(nickname), likes(is_like)')
         .is('deleted_at', null)
         .order('created_at', { ascending: false }),
@@ -123,7 +123,7 @@ function AdminPostsContent() {
     setLoadingComments(postId)
     const supabase = createClient()
     const { data } = await supabase
-      .from('comments')
+      .from('music_comments')
       .select('id, content, created_at, users(nickname)')
       .eq('post_id', postId)
       .is('deleted_at', null)
@@ -135,14 +135,14 @@ function AdminPostsContent() {
   async function handleDeleteComment(postId: number, commentId: number) {
     if (!confirm('댓글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
+    await supabase.from('music_comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     setComments(prev => ({ ...prev, [postId]: prev[postId].filter(c => c.id !== commentId) }))
   }
 
   async function handleDeletePost(id: number) {
     if (!confirm('정말 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
+    await supabase.from('music_posts').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     setPosts(prev => prev.filter(p => p.id !== id))
     if (expanded === id) setExpanded(null)
   }

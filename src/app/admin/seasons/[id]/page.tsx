@@ -44,14 +44,14 @@ export default function AdminSeasonDetail() {
       setSeason(s)
 
       const { data: postsData } = await supabase
-        .from('posts')
+        .from('music_posts')
         .select('*, users(nickname, avatar_url)')
         .eq('season_id', id)
         .is('deleted_at', null)
         .order('created_at', { ascending: false })
 
-      const { data: likesData } = await supabase.from('likes').select('post_id, is_like')
-      const { data: commentsData } = await supabase.from('comments').select('post_id').is('deleted_at', null)
+      const { data: likesData } = await supabase.from('music_likes').select('post_id, is_like')
+      const { data: commentsData } = await supabase.from('music_comments').select('post_id').is('deleted_at', null)
 
       const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(p => ({
         ...p,
@@ -83,7 +83,7 @@ export default function AdminSeasonDetail() {
   async function handleDeletePost(postId: number) {
     if (!confirm('이 글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', postId)
+    await supabase.from('music_posts').update({ deleted_at: new Date().toISOString() }).eq('id', postId)
     setPosts(prev => prev.filter(p => p.id !== postId))
   }
 

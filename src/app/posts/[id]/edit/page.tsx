@@ -38,7 +38,7 @@ export default function EditPostPage() {
       if (admin) setIsAdmin(true)
 
       const { data: post } = await supabase
-        .from('posts')
+        .from('music_posts')
         .select('*')
         .eq('id', id)
         .single()
@@ -71,7 +71,7 @@ export default function EditPostPage() {
 
     const supabase = createClient()
     const { error } = await supabase
-      .from('posts')
+      .from('music_posts')
       .update({
         title,
         artist: artist || null,

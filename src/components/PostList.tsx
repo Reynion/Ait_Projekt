@@ -118,13 +118,13 @@ export default function PostList() {
     }
 
     const { data: postsData } = await supabase
-      .from('posts')
+      .from('music_posts')
       .select('*, users(nickname, avatar_url)')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
 
-    const { data: likesData } = await supabase.from('likes').select('post_id, is_like')
-    const { data: commentsData } = await supabase.from('comments').select('post_id').is('deleted_at', null)
+    const { data: likesData } = await supabase.from('music_likes').select('post_id, is_like')
+    const { data: commentsData } = await supabase.from('music_comments').select('post_id').is('deleted_at', null)
 
     const enriched: Post[] = ((postsData ?? []) as unknown as Post[]).map(post => ({
       ...post,
@@ -141,9 +141,9 @@ export default function PostList() {
     const supabase = createClient()
     const channel = supabase
       .channel('posts-list')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'likes' }, fetchData)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'music_posts' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'music_likes' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'music_comments' }, fetchData)
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [])

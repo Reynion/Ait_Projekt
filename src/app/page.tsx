@@ -67,7 +67,7 @@ export default function Home() {
         { data: recordsData },
       ] = await Promise.all([
         supabase.from('board_posts').select('id, title').eq('is_notice', true).is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
-        supabase.from('posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('music_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('board_posts').select('id, title, created_at, users(nickname)').eq('is_notice', false).is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('polls').select('id, title, is_active').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('polls').select('id', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),

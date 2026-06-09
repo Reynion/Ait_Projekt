@@ -21,7 +21,16 @@ export async function POST(req: NextRequest) {
     const response = await admin.messaging().sendEachForMulticast({
       tokens: validTokens,
       webpush: {
-        data: { title, body, link: link ?? '/', icon: '/icon.png' },
+        headers: {
+          TTL: '86400',
+          Urgency: 'high',
+        },
+        notification: {
+          title,
+          body,
+          icon: '/icon.png',
+        },
+        data: { link: link ?? '/' },
       },
     })
     console.log('[push] success:', response.successCount, 'fail:', response.failureCount)

@@ -36,7 +36,7 @@ export default function NewPollPage() {
   useEffect(() => {
     const supabase = createClient()
     supabase
-      .from('posts')
+      .from('music_posts')
       .select('id, title, artist, users(nickname)')
       .order('created_at', { ascending: false })
       .then(({ data }) => {

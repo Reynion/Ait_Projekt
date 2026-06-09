@@ -42,7 +42,7 @@ export default function PostDetailPage() {
       setCurrentUserId(user.id)
 
       const { data } = await supabase
-        .from('posts')
+        .from('music_posts')
         .select('*, users(nickname, avatar_url), seasons(name)')
         .eq('id', id)
         .single()
@@ -51,8 +51,8 @@ export default function PostDetailPage() {
 
       const numId = Number(id)
       const [{ data: prev }, { data: next }] = await Promise.all([
-        supabase.from('posts').select('id, title').is('deleted_at', null).lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
-        supabase.from('posts').select('id, title').is('deleted_at', null).gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
+        supabase.from('music_posts').select('id, title').is('deleted_at', null).lt('id', numId).order('id', { ascending: false }).limit(1).maybeSingle(),
+        supabase.from('music_posts').select('id, title').is('deleted_at', null).gt('id', numId).order('id', { ascending: true }).limit(1).maybeSingle(),
       ])
       if (prev) setPrevPost(prev)
       if (next) setNextPost(next)
@@ -65,7 +65,7 @@ export default function PostDetailPage() {
   async function handleDelete() {
     if (!post || !confirm('정말 삭제하시겠습니까?')) return
     const supabase = createClient()
-    const { error } = await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id)
+    const { error } = await supabase.from('music_posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id)
     if (error) { alert('삭제에 실패했습니다.'); return }
     router.push('/posts')
   }

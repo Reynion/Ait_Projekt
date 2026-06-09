@@ -38,7 +38,7 @@ export default function AdminPostDetailPage() {
     const supabase = createClient()
     async function load() {
       const { data: postData } = await supabase
-        .from('posts')
+        .from('music_posts')
         .select('*, users(nickname, avatar_url), seasons(name)')
         .eq('id', id)
         .single()
@@ -46,7 +46,7 @@ export default function AdminPostDetailPage() {
       setPost(postData as unknown as Post)
 
       const { data: commentData } = await supabase
-        .from('comments')
+        .from('music_comments')
         .select('id, content, created_at, parent_id, users(nickname)')
         .eq('post_id', id)
         .is('deleted_at', null)
@@ -60,14 +60,14 @@ export default function AdminPostDetailPage() {
   async function handleDeleteComment(commentId: number) {
     if (!confirm('댓글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
+    await supabase.from('music_comments').update({ deleted_at: new Date().toISOString() }).eq('id', commentId)
     setComments(prev => prev.filter(c => c.id !== commentId && c.parent_id !== commentId))
   }
 
   async function handleDeletePost() {
     if (!post || !confirm('게시글을 삭제하시겠습니까?')) return
     const supabase = createClient()
-    await supabase.from('posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id)
+    await supabase.from('music_posts').update({ deleted_at: new Date().toISOString() }).eq('id', post.id)
     router.push('/admin/posts')
   }
 
