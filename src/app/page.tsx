@@ -54,8 +54,8 @@ export default function Home() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
-      const { data: userRow } = await supabase.from('users').select('name').eq('id', data.user.id).single()
-      if (!userRow?.name) setShowNameModal(true)
+      const { data: userRow, error: nameError } = await supabase.from('users').select('name').eq('id', data.user.id).single()
+      if (!nameError && !userRow?.name) setShowNameModal(true)
 
       const [
         { data: noticeData },
