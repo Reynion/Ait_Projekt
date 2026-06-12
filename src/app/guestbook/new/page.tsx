@@ -35,7 +35,7 @@ export default function GuestbookNewPage() {
     setSubmitting(true)
     const supabase = createClient()
 
-    const payload = isAnonymous
+    const payload: { user_id: string | null; content: string; guest_nickname?: string } = isAnonymous
       ? { user_id: null, guest_nickname: guestName.trim(), content: content.trim() }
       : { user_id: currentUserId, content: content.trim() }
 

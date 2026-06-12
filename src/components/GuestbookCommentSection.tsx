@@ -121,7 +121,7 @@ export default function GuestbookCommentSection({ guestbookId, currentUserId, is
     setSubmitting(true)
     const supabase = createClient()
 
-    const payload = isAnonymous
+    const payload: { guestbook_id: number; user_id: string | null; content: string; parent_id: number | null; guest_nickname?: string } = isAnonymous
       ? { guestbook_id: guestbookId, user_id: null, guest_nickname: guestName.trim(), content: content.trim(), parent_id: replyTarget?.parentId ?? null }
       : { guestbook_id: guestbookId, user_id: currentUserId, content: content.trim(), parent_id: replyTarget?.parentId ?? null }
 
