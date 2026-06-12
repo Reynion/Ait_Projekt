@@ -23,6 +23,7 @@ interface BoardPost {
   image_urls: string[] | null
   created_at: string
   post_type: string | null
+  is_notice: boolean | null
   music_items: MusicItem[] | null
   music_outro: string | null
   users: { nickname: string; avatar_url: string | null } | null
@@ -94,7 +95,10 @@ export default function AdminBoardDetailPage() {
 
       <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-5 flex flex-col gap-4">
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-wrap">
+            {post.is_notice && (
+              <span className="text-xs bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>
+            )}
             {post.post_type === 'music' && (
               <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>
             )}

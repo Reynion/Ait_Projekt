@@ -12,6 +12,7 @@ interface BoardPost {
   image_urls: string[] | null
   created_at: string
   post_type: string | null
+  is_notice: boolean | null
   users: { nickname: string } | null
 }
 
@@ -156,6 +157,7 @@ function AdminBoardContent() {
             <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4 p-4">
               <div className="flex flex-col gap-1 flex-1 min-w-0">
                 <div className="flex items-center gap-2 min-w-0">
+                  {post.is_notice && <span className="text-xs bg-amber-500/20 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">📌 공지</span>}
                   {post.post_type === 'music' && <span className="text-xs bg-purple-500/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded-full font-medium flex-shrink-0">🎵 노래공유</span>}
                   <span className="font-semibold text-zinc-100 truncate">{post.title}</span>
                 </div>
