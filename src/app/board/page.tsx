@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import UserProfileModal from '@/components/UserProfileModal'
+import { getWritePermission } from '@/lib/permissions'
 
 interface BoardPost {
   id: number
@@ -41,6 +42,7 @@ export default function BoardPage() {
   const router = useRouter()
   const [posts, setPosts] = useState<BoardPost[]>([])
   const [loading, setLoading] = useState(true)
+  const [canWrite, setCanWrite] = useState(false)
 
   const [searchType, setSearchType] = useState<SearchType>('title')
   const [search, setSearch] = useState('')
@@ -76,6 +78,7 @@ export default function BoardPage() {
     async function load() {
       const { data: user } = await supabase.auth.getUser()
       if (!user.user) { router.push('/login'); return }
+      getWritePermission('board').then(setCanWrite)
 
       const { data: postsData } = await supabase
         .from('board_posts')
@@ -127,12 +130,14 @@ export default function BoardPage() {
       <section className="flex-1 max-w-2xl w-full mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">게시판</h2>
-          <Link
-            href="/board/new"
-            className="bg-zinc-800 border border-zinc-600 text-zinc-200 text-sm px-4 py-2 rounded-lg hover:border-zinc-400 hover:text-white transition-colors"
-          >
-            + 글쓰기
-          </Link>
+          {canWrite && (
+            <Link
+              href="/board/new"
+              className="bg-zinc-800 border border-zinc-600 text-zinc-200 text-sm px-4 py-2 rounded-lg hover:border-zinc-400 hover:text-white transition-colors"
+            >
+              + 글쓰기
+            </Link>
+          )}
         </div>
 
         {/* 검색 */}

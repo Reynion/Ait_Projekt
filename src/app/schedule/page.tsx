@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { getWritePermission } from '@/lib/permissions'
 
 interface Schedule {
   id: number
@@ -35,6 +36,7 @@ export default function SchedulePage() {
   const router = useRouter()
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [canWrite, setCanWrite] = useState(false)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [loading, setLoading] = useState(true)
   const [today] = useState(() => toLocalDateStr(new Date()))
@@ -49,6 +51,7 @@ export default function SchedulePage() {
       setCurrentUserId(data.user.id)
       const { data: row } = await supabase.from('users').select('role').eq('id', data.user.id).single()
       if (row?.role === 'admin') setIsAdmin(true)
+      getWritePermission('schedule').then(setCanWrite)
       await fetchSchedules()
       setLoading(false)
     })
@@ -126,12 +129,14 @@ export default function SchedulePage() {
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span>공식</span>
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>개인</span>
               </div>
-              <Link
-                href={`/schedule/new${selectedDate ? `?date=${selectedDate}` : ''}`}
-                className="bg-zinc-700 border border-zinc-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors whitespace-nowrap"
-              >
-                + 일정 추가
-              </Link>
+              {canWrite && (
+                <Link
+                  href={`/schedule/new${selectedDate ? `?date=${selectedDate}` : ''}`}
+                  className="bg-zinc-700 border border-zinc-600 text-white text-sm px-3 py-1.5 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors whitespace-nowrap"
+                >
+                  + 일정 추가
+                </Link>
+              )}
             </div>
           </div>
 
@@ -197,7 +202,7 @@ export default function SchedulePage() {
                   ? `${parseInt(selectedDate.slice(5, 7))}월 ${parseInt(selectedDate.slice(8, 10))}일`
                   : '날짜 선택'}
               </h3>
-              {selectedDate && (
+              {selectedDate && canWrite && (
                 <Link
                   href={`/schedule/new?date=${selectedDate}`}
                   className="text-xs text-zinc-400 hover:text-white transition-colors"

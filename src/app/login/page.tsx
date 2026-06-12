@@ -30,6 +30,19 @@ export default function LoginPage() {
     router.refresh()
   }
 
+  async function handleGuestLogin() {
+    setLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInAnonymously()
+    if (error) {
+      setError('방문객 접속에 실패했습니다.')
+      setLoading(false)
+      return
+    }
+    router.push('/')
+    router.refresh()
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-zinc-950">
       <div className="w-full max-w-sm bg-zinc-800 border border-zinc-700 rounded-2xl p-8">
@@ -66,7 +79,20 @@ export default function LoginPage() {
             {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
-        <p className="text-center text-sm text-zinc-500 mt-4">
+        <div className="flex items-center gap-3 mt-2">
+          <div className="flex-1 h-px bg-zinc-700" />
+          <span className="text-xs text-zinc-600">또는</span>
+          <div className="flex-1 h-px bg-zinc-700" />
+        </div>
+        <button
+          type="button"
+          onClick={handleGuestLogin}
+          disabled={loading}
+          className="w-full border border-zinc-600 text-zinc-400 rounded-lg py-2 text-sm hover:border-zinc-400 hover:text-zinc-200 disabled:opacity-50 transition-colors"
+        >
+          방문객으로 접속
+        </button>
+        <p className="text-center text-sm text-zinc-500 mt-2">
           우리 밴드는 처음이니?{' '}
           <Link href="/signup" className="text-zinc-400 hover:text-white hover:underline transition-colors">회원가입</Link>
         </p>

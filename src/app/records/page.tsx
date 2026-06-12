@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import Image from 'next/image'
+import { getWritePermission } from '@/lib/permissions'
 
 function Avatar({ url, nickname }: { url: string | null; nickname: string }) {
   return (
@@ -54,11 +55,14 @@ export default function RecordsPage() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [canWrite, setCanWrite] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) router.push('/login')
+      const write = await getWritePermission('records')
+      setCanWrite(write)
     })
   }, [router])
 
@@ -100,12 +104,14 @@ export default function RecordsPage() {
       <section className="max-w-3xl w-full mx-auto px-4 py-8 flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-white">기록</h1>
-          <Link
-            href="/records/new"
-            className="bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors"
-          >
-            + 기록 작성
-          </Link>
+          {canWrite && (
+            <Link
+              href="/records/new"
+              className="bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 transition-colors"
+            >
+              + 기록 작성
+            </Link>
+          )}
         </div>
 
         {loading ? (
