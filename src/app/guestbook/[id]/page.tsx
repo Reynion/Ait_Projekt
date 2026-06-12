@@ -12,7 +12,8 @@ interface GuestbookEntry {
   id: number
   content: string
   created_at: string
-  user_id: string
+  user_id: string | null
+  guest_nickname: string | null
   users: { nickname: string; avatar_url: string | null } | null
 }
 
@@ -23,6 +24,7 @@ export default function GuestbookDetailPage() {
   const [loading, setLoading] = useState(true)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isAnonymous, setIsAnonymous] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -30,6 +32,7 @@ export default function GuestbookDetailPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setCurrentUserId(user.id)
+      setIsAnonymous(user.is_anonymous ?? false)
 
       if (!user.is_anonymous) {
         const { data: userRow } = await supabase.from('users').select('role').eq('id', user.id).maybeSingle()
@@ -38,7 +41,7 @@ export default function GuestbookDetailPage() {
 
       const { data } = await supabase
         .from('guestbook')
-        .select('id, content, created_at, user_id, users(nickname, avatar_url)')
+        .select('id, content, created_at, user_id, guest_nickname, users(nickname, avatar_url)')
         .eq('id', id)
         .is('deleted_at', null)
         .maybeSingle()
@@ -68,7 +71,8 @@ export default function GuestbookDetailPage() {
 
   if (!entry) return null
 
-  const canDelete = isAdmin || entry.user_id === currentUserId
+  const authorName = entry.guest_nickname ?? entry.users?.nickname ?? '알 수 없음'
+  const canDelete = isAdmin || (entry.user_id !== null && entry.user_id === currentUserId)
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">
@@ -81,13 +85,16 @@ export default function GuestbookDetailPage() {
             <div className="flex items-center gap-3 min-w-0">
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
                 {entry.users?.avatar_url ? (
-                  <Image src={entry.users.avatar_url} alt={entry.users.nickname} fill className="object-cover" unoptimized />
+                  <Image src={entry.users.avatar_url} alt={authorName} fill className="object-cover" unoptimized />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-zinc-400">👤</div>
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-zinc-100 truncate">{entry.users?.nickname ?? '알 수 없음'}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-zinc-100 truncate">{authorName}</p>
+                  {entry.guest_nickname && <span className="text-xs text-zinc-600 bg-zinc-700/50 px-1.5 py-0.5 rounded flex-shrink-0">방문객</span>}
+                </div>
                 <p className="text-xs text-zinc-500">{new Date(entry.created_at).toLocaleDateString('ko-KR')}</p>
               </div>
             </div>
@@ -106,6 +113,7 @@ export default function GuestbookDetailPage() {
             <GuestbookCommentSection
               guestbookId={entry.id}
               currentUserId={currentUserId}
+              isAnonymous={isAnonymous}
               postAuthorId={entry.user_id}
               link={`/guestbook/${entry.id}`}
             />

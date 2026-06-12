@@ -12,7 +12,8 @@ interface GuestbookEntry {
   id: number
   content: string
   created_at: string
-  user_id: string
+  user_id: string | null
+  guest_nickname: string | null
   users: { nickname: string; avatar_url: string | null } | null
   comment_count: number
 }
@@ -64,7 +65,7 @@ function GuestbookContent() {
 
       const [{ data, count }, { data: commentCounts }] = await Promise.all([
         supabase.from('guestbook')
-          .select('id, content, created_at, user_id, users(nickname, avatar_url)', { count: 'exact' })
+          .select('id, content, created_at, user_id, guest_nickname, users(nickname, avatar_url)', { count: 'exact' })
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .range(from, to),
@@ -138,7 +139,8 @@ function GuestbookContent() {
                             <div className="w-full h-full flex items-center justify-center text-xs text-zinc-400">👤</div>
                           )}
                         </div>
-                        <span className="text-xs text-zinc-400">{entry.users?.nickname ?? '알 수 없음'}</span>
+                        <span className="text-xs text-zinc-400">{entry.guest_nickname ?? entry.users?.nickname ?? '알 수 없음'}</span>
+                        {entry.guest_nickname && <span className="text-xs text-zinc-600 bg-zinc-700/50 px-1.5 py-0.5 rounded">방문객</span>}
                         <span className="text-zinc-600 text-xs">·</span>
                         <span className="text-xs text-zinc-500">{new Date(entry.created_at).toLocaleDateString('ko-KR')}</span>
                         {entry.comment_count > 0 && (
