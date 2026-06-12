@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import { useFCMToken } from '@/hooks/useFCMToken'
 import { useLastSeen } from '@/hooks/useLastSeen'
 import NameRequiredModal from '@/components/NameRequiredModal'
+import { getAllReadPermissions } from '@/lib/permissions'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>
@@ -45,6 +46,7 @@ export default function Home() {
   const [recentRecords, setRecentRecords] = useState<RecentItem[]>([])
   const [hasActivePoll, setHasActivePoll] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
+  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({ posts: true, board: true, polls: true, schedule: true, records: true })
 
   useFCMToken(userId)
   useLastSeen(userId)
@@ -56,6 +58,9 @@ export default function Home() {
       setUserId(data.user.id)
       const { data: userRow, error: nameError } = await supabase.from('users').select('name').eq('id', data.user.id).single()
       if (!nameError && !userRow?.name) setShowNameModal(true)
+
+      const perms = await getAllReadPermissions()
+      setAllowedSections(perms)
 
       const [
         { data: noticeData },
@@ -129,41 +134,43 @@ export default function Home() {
 
   if (loading) return null
 
-  const cards = [
-    { href: '/posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
-    { href: '/board', icon: '📋', title: '게시판', desc: '공지사항 등 자유롭게 소통해요.' },
-    { href: '/polls', icon: '🗳️', title: '투표', desc: '다음 공연 연습곡을 투표로 결정해요.' },
-    { href: '/schedule', icon: '📅', title: '일정', desc: '밴드 일정을 달력으로 한눈에 확인해요.' },
-    { href: '/records', icon: '🎬', title: '기록', desc: '공연과 연습의 소중한 순간을 기록해요.' },
+  const allCards = [
+    { href: '/posts', section: 'posts', icon: '🎵', title: '음악 제안', desc: '멤버들이 연주하고 싶은 곡을 제안하고 의견을 나눠요.' },
+    { href: '/board', section: 'board', icon: '📋', title: '게시판', desc: '공지사항 등 자유롭게 소통해요.' },
+    { href: '/polls', section: 'polls', icon: '🗳️', title: '투표', desc: '다음 공연 연습곡을 투표로 결정해요.' },
+    { href: '/schedule', section: 'schedule', icon: '📅', title: '일정', desc: '밴드 일정을 달력으로 한눈에 확인해요.' },
+    { href: '/records', section: 'records', icon: '🎬', title: '기록', desc: '공연과 연습의 소중한 순간을 기록해요.' },
   ]
+  const cards = allCards.filter(c => allowedSections[c.section] !== false)
 
-  const recentSections = [
+  const allRecentSections = [
     {
-      title: '음악 제안', href: '/posts', items: recentPosts,
+      section: 'posts', title: '음악 제안', href: '/posts', items: recentPosts,
       itemHref: (id: number) => `/posts/${id}`,
       meta: (item: RecentItem) => item.nickname ?? '',
     },
     {
-      title: '게시판', href: '/board', items: recentBoard,
+      section: 'board', title: '게시판', href: '/board', items: recentBoard,
       itemHref: (id: number) => `/board/${id}`,
       meta: (item: RecentItem) => item.nickname ?? '',
     },
     {
-      title: '투표', href: '/polls', items: recentPolls,
+      section: 'polls', title: '투표', href: '/polls', items: recentPolls,
       itemHref: (id: number) => `/polls/${id}`,
       meta: (item: RecentItem) => item.is_active ? '진행중' : '종료',
     },
     {
-      title: '다가오는 일정', href: '/schedule', items: recentSchedules,
+      section: 'schedule', title: '다가오는 일정', href: '/schedule', items: recentSchedules,
       itemHref: () => `/schedule`,
       meta: (item: RecentItem) => item.start_date ? new Date(item.start_date + 'T00:00:00').toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' }) : '',
     },
     {
-      title: '기록', href: '/records', items: recentRecords,
+      section: 'records', title: '기록', href: '/records', items: recentRecords,
       itemHref: (id: number) => `/records/${id}`,
       meta: (item: RecentItem) => item.nickname ?? '',
     },
   ]
+  const recentSections = allRecentSections.filter(s => allowedSections[s.section] !== false)
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950">

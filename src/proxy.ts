@@ -54,18 +54,24 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 익명 사용자(방문객) 섹션 접근 제어
-  if (user?.is_anonymous) {
+  // 섹션 접근 권한 제어 (모든 로그인 사용자)
+  if (user) {
     const section = getSectionFromPath(request.nextUrl.pathname)
     if (section) {
-      const { data: perm } = await supabase
-        .from('section_permissions')
-        .select('can_read')
-        .eq('section', section)
-        .eq('role', 'guest')
-        .maybeSingle()
-      if (!perm?.can_read) {
-        return NextResponse.redirect(new URL('/login', request.url))
+      const role = user.is_anonymous
+        ? 'guest'
+        : ((await supabase.from('users').select('role').eq('id', user.id).maybeSingle()).data?.role ?? 'member')
+
+      if (role !== 'admin') {
+        const { data: perm } = await supabase
+          .from('section_permissions')
+          .select('can_read')
+          .eq('section', section)
+          .eq('role', role)
+          .maybeSingle()
+        if (!perm?.can_read) {
+          return NextResponse.redirect(new URL('/', request.url))
+        }
       }
     }
   }

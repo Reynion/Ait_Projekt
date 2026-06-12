@@ -6,11 +6,13 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useTheme } from '@/components/ThemeProvider'
+import { getAllReadPermissions } from '@/lib/permissions'
 
 interface UserInfo {
   nickname: string
   avatar_url: string | null
   role: string
+  isAnonymous?: boolean
 }
 
 interface Notification {
@@ -31,6 +33,20 @@ const NAV_ITEMS = [
   { label: '기록', href: '/records' },
 ]
 
+function roleBadgeClass(role: string) {
+  if (role === 'admin') return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+  if (role === 'former') return 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+  if (role === 'guest') return 'bg-zinc-600/50 border-zinc-500/30 text-zinc-400'
+  return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+}
+
+function roleLabel(role: string) {
+  if (role === 'admin') return '관리자'
+  if (role === 'former') return '전멤버'
+  if (role === 'guest') return '방문객'
+  return '멤버'
+}
+
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -39,6 +55,7 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [notiOpen, setNotiOpen] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({})
   const notiRef = useRef<HTMLDivElement>(null)
   const notiRefMobile = useRef<HTMLDivElement>(null)
 
@@ -47,12 +64,20 @@ export default function Navbar() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return
       setCurrentUserId(data.user.id)
-      const { data: row } = await supabase
-        .from('users')
-        .select('nickname, avatar_url, role')
-        .eq('id', data.user.id)
-        .single()
-      if (row) setUserInfo(row)
+
+      if (data.user.is_anonymous) {
+        setUserInfo({ nickname: '방문객', avatar_url: null, role: 'guest', isAnonymous: true })
+      } else {
+        const { data: row } = await supabase
+          .from('users')
+          .select('nickname, avatar_url, role')
+          .eq('id', data.user.id)
+          .single()
+        if (row) setUserInfo(row)
+      }
+
+      const perms = await getAllReadPermissions()
+      setAllowedSections(perms)
     })
   }, [])
 
@@ -175,8 +200,19 @@ export default function Navbar() {
     return pathname.startsWith(href)
   }
 
+  const sectionKeyMap: Record<string, string> = {
+    '/posts': 'posts', '/board': 'board', '/polls': 'polls',
+    '/schedule': 'schedule', '/records': 'records',
+  }
+
+  const filteredNavItems = NAV_ITEMS.filter(item => {
+    const key = sectionKeyMap[item.href]
+    if (!key) return true // 홈 등 섹션 아닌 항목은 항상 표시
+    return allowedSections[key] !== false
+  })
+
   const allNavItems = [
-    ...NAV_ITEMS,
+    ...filteredNavItems,
     ...(userInfo?.role === 'admin' ? [{ label: '관리자', href: '/admin' }] : []),
   ]
 
@@ -254,7 +290,7 @@ export default function Navbar() {
 
         {/* 데스크톱 네비게이션 */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_ITEMS.map(item => (
+          {filteredNavItems.map(item => (
             <Link
               key={item.href}
               href={item.href}
@@ -301,7 +337,7 @@ export default function Navbar() {
             {notiOpen && <NotiDropdown />}
           </div>
           {userInfo && (
-            <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+            <Link href={userInfo.isAnonymous ? '/login' : '/profile'} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="relative w-8 h-8 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
                 {userInfo.avatar_url ? (
                   <Image src={userInfo.avatar_url} alt="프로필" fill className="object-cover" unoptimized />
@@ -310,6 +346,9 @@ export default function Navbar() {
                 )}
               </div>
               <span className="text-sm text-zinc-200">{userInfo.nickname}</span>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full border ${roleBadgeClass(userInfo.role)}`}>
+                {roleLabel(userInfo.role)}
+              </span>
             </Link>
           )}
           <button
@@ -340,7 +379,7 @@ export default function Navbar() {
             {notiOpen && <NotiDropdown mobile />}
           </div>
           {userInfo && (
-            <Link href="/profile" className="flex items-center gap-2">
+            <Link href={userInfo.isAnonymous ? '/login' : '/profile'} className="flex items-center gap-1.5">
               <div className="relative w-8 h-8 rounded-full overflow-hidden bg-zinc-700 border border-zinc-600 flex-shrink-0">
                 {userInfo.avatar_url ? (
                   <Image src={userInfo.avatar_url} alt="프로필" fill className="object-cover" unoptimized />
@@ -348,6 +387,9 @@ export default function Navbar() {
                   <div className="w-full h-full flex items-center justify-center text-sm text-zinc-400">👤</div>
                 )}
               </div>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full border ${roleBadgeClass(userInfo.role)}`}>
+                {roleLabel(userInfo.role)}
+              </span>
             </Link>
           )}
           <button
