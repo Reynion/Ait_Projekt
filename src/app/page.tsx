@@ -56,8 +56,10 @@ export default function Home() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
       setUserId(data.user.id)
-      const { data: userRow, error: nameError } = await supabase.from('users').select('name').eq('id', data.user.id).single()
-      if (!nameError && !userRow?.name) setShowNameModal(true)
+      if (!data.user.is_anonymous) {
+        const { data: userRow, error: nameError } = await supabase.from('users').select('name').eq('id', data.user.id).maybeSingle()
+        if (!nameError && !userRow?.name) setShowNameModal(true)
+      }
 
       const perms = await getAllReadPermissions()
       setAllowedSections(perms)
