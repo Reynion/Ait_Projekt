@@ -9,6 +9,7 @@ interface UserInfo {
   nickname: string
   name: string | null
   avatar_url: string | null
+  role?: string
   created_at?: string
 }
 
@@ -22,7 +23,7 @@ export default function UserProfileModal({ userId, onClose }: Props) {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('users').select('id, nickname, name, avatar_url, created_at').eq('id', userId).single()
+    supabase.from('users').select('id, nickname, name, avatar_url, role, created_at').eq('id', userId).single()
       .then(({ data }) => { if (data) setUser(data as UserInfo) })
   }, [userId])
 
@@ -50,7 +51,18 @@ export default function UserProfileModal({ userId, onClose }: Props) {
 
         {user ? (
           <div className="flex flex-col items-center gap-1 w-full">
-            <p className="text-lg font-bold text-white">{user.nickname}</p>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <p className="text-lg font-bold text-white">{user.nickname}</p>
+              {user.role && (
+                <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                  user.role === 'admin' ? 'bg-blue-500/10 border-blue-500/30 text-blue-400' :
+                  user.role === 'former' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                  'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                }`}>
+                  {user.role === 'admin' ? '관리자' : user.role === 'former' ? '전멤버' : '멤버'}
+                </span>
+              )}
+            </div>
             {user.name && <p className="text-sm text-zinc-400">{user.name}</p>}
             {user.created_at && (
               <p className="text-xs text-zinc-500 mt-1">

@@ -39,11 +39,22 @@ export default function AdminAccounts() {
 
   useEffect(() => { fetchUsers() }, [])
 
-  async function toggleRole(user: UserRow) {
-    const newRole = user.role === 'admin' ? 'member' : 'admin'
+  async function setRole(userId: string, newRole: string) {
     const supabase = createClient()
-    await supabase.from('users').update({ role: newRole }).eq('id', user.id)
-    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+    await supabase.from('users').update({ role: newRole }).eq('id', userId)
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+  }
+
+  function roleBadgeClass(role: string) {
+    if (role === 'admin') return 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+    if (role === 'former') return 'bg-amber-500/10 border-amber-500/30 text-amber-500'
+    return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+  }
+
+  function roleLabel(role: string) {
+    if (role === 'admin') return '관리자'
+    if (role === 'former') return '전멤버'
+    return '멤버'
   }
 
   function startEdit(user: UserRow) {
@@ -119,12 +130,8 @@ export default function AdminAccounts() {
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-semibold text-zinc-100">{user.nickname}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${
-                      user.role === 'admin'
-                        ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
-                        : 'bg-zinc-700 border-zinc-600 text-zinc-400'
-                    }`}>
-                      {user.role === 'admin' ? '관리자' : '멤버'}
+                    <span className={`text-xs px-2 py-0.5 rounded-full border flex-shrink-0 ${roleBadgeClass(user.role)}`}>
+                      {roleLabel(user.role)}
                     </span>
                   </div>
                   {user.name && <span className="text-xs text-zinc-400">{user.name}</span>}
@@ -149,12 +156,15 @@ export default function AdminAccounts() {
                 >
                   {editingId === user.id ? '닫기' : '수정'}
                 </button>
-                <button
-                  onClick={() => toggleRole(user)}
-                  className="text-xs px-3 py-1.5 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-400 hover:text-zinc-200 transition-colors"
+                <select
+                  value={user.role}
+                  onChange={e => setRole(user.id, e.target.value)}
+                  className="text-xs px-2 py-1.5 rounded-lg border border-zinc-600 bg-zinc-800 text-zinc-300 hover:border-zinc-400 transition-colors cursor-pointer"
                 >
-                  {user.role === 'admin' ? '멤버로 변경' : '관리자로 변경'}
-                </button>
+                  <option value="admin">관리자</option>
+                  <option value="member">멤버</option>
+                  <option value="former">전멤버</option>
+                </select>
               </div>
             </div>
 
