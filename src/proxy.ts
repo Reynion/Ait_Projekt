@@ -7,6 +7,7 @@ function getSectionFromPath(pathname: string): string | null {
   if (pathname.startsWith('/polls')) return 'polls'
   if (pathname.startsWith('/schedule')) return 'schedule'
   if (pathname.startsWith('/records')) return 'records'
+  if (pathname.startsWith('/guestbook')) return 'guestbook'
   return null
 }
 

@@ -9,6 +9,7 @@ const SECTIONS = [
   { key: 'polls', label: '투표' },
   { key: 'schedule', label: '일정' },
   { key: 'records', label: '기록' },
+  { key: 'guestbook', label: '방명록' },
 ]
 
 const ROLES = [

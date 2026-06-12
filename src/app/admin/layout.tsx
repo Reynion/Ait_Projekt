@@ -16,6 +16,7 @@ const ADMIN_MENUS = [
   { href: '/admin/polls', label: '투표 관리' },
   { href: '/admin/schedules', label: '일정 관리' },
   { href: '/admin/records', label: '기록 관리' },
+  { href: '/admin/guestbook', label: '방명록 관리' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

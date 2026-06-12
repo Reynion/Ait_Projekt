@@ -46,7 +46,8 @@ export default function Home() {
   const [recentRecords, setRecentRecords] = useState<RecentItem[]>([])
   const [hasActivePoll, setHasActivePoll] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
-  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({ posts: true, board: true, polls: true, schedule: true, records: true })
+  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({ posts: true, board: true, polls: true, schedule: true, records: true, guestbook: true })
+  const [recentGuestbook, setRecentGuestbook] = useState<RecentItem[]>([])
 
   useFCMToken(userId)
   useLastSeen(userId)
@@ -72,6 +73,7 @@ export default function Home() {
         { count: activePollCount },
         { data: schedulesData },
         { data: recordsData },
+        { data: guestbookData },
       ] = await Promise.all([
         supabase.from('board_posts').select('id, title').eq('is_notice', true).is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
         supabase.from('music_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
@@ -80,6 +82,7 @@ export default function Home() {
         supabase.from('polls').select('id', { count: 'exact', head: true }).eq('is_active', true).is('deleted_at', null),
         supabase.from('schedules').select('id, title, start_date').is('deleted_at', null).order('start_date', { ascending: true }).gte('start_date', new Date().toISOString().slice(0, 10)).limit(3),
         supabase.from('record_posts').select('id, title, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
+        supabase.from('guestbook').select('id, content, created_at, users(nickname)').is('deleted_at', null).order('created_at', { ascending: false }).limit(3),
       ])
 
       setNotices((noticeData ?? []) as Notice[])
@@ -88,6 +91,7 @@ export default function Home() {
       setRecentPolls((pollsData ?? []) as RecentItem[])
       setRecentSchedules(((schedulesData ?? []) as unknown[]).map((p: unknown) => { const x = p as { id: number; title: string; start_date: string }; return { id: x.id, title: x.title, start_date: x.start_date } }))
       setRecentRecords(((recordsData ?? []) as unknown[]).map((p: unknown) => { const x = p as { id: number; title: string; created_at: string; users: { nickname: string } | null }; return { id: x.id, title: x.title, created_at: x.created_at, nickname: x.users?.nickname } }))
+      setRecentGuestbook(((guestbookData ?? []) as unknown[]).map((p: unknown) => { const x = p as { id: number; content: string; created_at: string; users: { nickname: string } | null }; return { id: x.id, title: x.content.slice(0, 40) + (x.content.length > 40 ? '...' : ''), created_at: x.created_at, nickname: x.users?.nickname } }))
       setHasActivePoll((activePollCount ?? 0) > 0)
       setLoading(false)
     })
@@ -142,6 +146,7 @@ export default function Home() {
     { href: '/polls', section: 'polls', icon: '🗳️', title: '투표', desc: '다음 공연 연습곡을 투표로 결정해요.' },
     { href: '/schedule', section: 'schedule', icon: '📅', title: '일정', desc: '밴드 일정을 달력으로 한눈에 확인해요.' },
     { href: '/records', section: 'records', icon: '🎬', title: '기록', desc: '공연과 연습의 소중한 순간을 기록해요.' },
+    { href: '/guestbook', section: 'guestbook', icon: '📝', title: '방명록', desc: '밴드에게 하고 싶은 말을 남겨요.' },
   ]
   const cards = allCards.filter(c => allowedSections[c.section] !== false)
 
@@ -169,6 +174,11 @@ export default function Home() {
     {
       section: 'records', title: '기록', href: '/records', items: recentRecords,
       itemHref: (id: number) => `/records/${id}`,
+      meta: (item: RecentItem) => item.nickname ?? '',
+    },
+    {
+      section: 'guestbook', title: '방명록', href: '/guestbook', items: recentGuestbook,
+      itemHref: (id: number) => `/guestbook/${id}`,
       meta: (item: RecentItem) => item.nickname ?? '',
     },
   ]
