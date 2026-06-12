@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { notifyComment } from '@/lib/notifications'
+import { getCommentPermission } from '@/lib/permissions'
 import Image from 'next/image'
 import UserProfileModal from '@/components/UserProfileModal'
 
@@ -57,7 +58,12 @@ export default function RecordCommentSection({ recordPostId, currentUserId, post
   const [submitting, setSubmitting] = useState(false)
   const [currentUserNickname, setCurrentUserNickname] = useState('')
   const [profileUserId, setProfileUserId] = useState<string | null>(null)
+  const [canComment, setCanComment] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    getCommentPermission('records').then(setCanComment)
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -190,31 +196,37 @@ export default function RecordCommentSection({ recordPostId, currentUserId, post
           ))}
         </ul>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-2 pt-2 border-t border-zinc-700">
-          {replyTarget && (
-            <div className="flex items-center gap-2 text-sm text-zinc-400 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2">
-              <span>↩ {replyTarget.mention ? `@${replyTarget.mention}에게 답글` : '답글 작성 중'}</span>
-              <button type="button" onClick={cancelReply} className="text-zinc-500 hover:text-zinc-200 ml-auto">✕</button>
-            </div>
+        <div className="pt-2 border-t border-zinc-700">
+          {canComment ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+              {replyTarget && (
+                <div className="flex items-center gap-2 text-sm text-zinc-400 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2">
+                  <span>↩ {replyTarget.mention ? `@${replyTarget.mention}에게 답글` : '답글 작성 중'}</span>
+                  <button type="button" onClick={cancelReply} className="text-zinc-500 hover:text-zinc-200 ml-auto">✕</button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  placeholder={replyTarget ? '답글을 입력하세요...' : '댓글을 입력하세요...'}
+                  className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting || !content.trim()}
+                  className="flex-shrink-0 bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 disabled:opacity-50 transition-colors"
+                >
+                  등록
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-sm text-zinc-500">댓글 작성 권한이 없습니다.</p>
           )}
-          <div className="flex gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={content}
-              onChange={e => setContent(e.target.value)}
-              placeholder={replyTarget ? '답글을 입력하세요...' : '댓글을 입력하세요...'}
-              className="flex-1 min-w-0 bg-zinc-900 border border-zinc-600 rounded-lg px-3 py-2 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:border-zinc-400"
-            />
-            <button
-              type="submit"
-              disabled={submitting || !content.trim()}
-              className="flex-shrink-0 bg-zinc-700 border border-zinc-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-zinc-600 hover:border-zinc-500 disabled:opacity-50 transition-colors"
-            >
-              등록
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </>
   )

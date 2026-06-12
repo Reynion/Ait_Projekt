@@ -23,6 +23,7 @@ interface Permission {
   role: string
   can_read: boolean
   can_write: boolean
+  can_comment: boolean
 }
 
 export default function PermissionsPage() {
@@ -34,7 +35,7 @@ export default function PermissionsPage() {
     const supabase = createClient()
     supabase
       .from('section_permissions')
-      .select('section, role, can_read, can_write')
+      .select('section, role, can_read, can_write, can_comment')
       .then(({ data }) => {
         if (data) setPerms(data as Permission[])
         setLoading(false)
@@ -45,7 +46,7 @@ export default function PermissionsPage() {
     return perms.find(p => p.section === section && p.role === role)
   }
 
-  async function toggle(section: string, role: string, field: 'can_read' | 'can_write') {
+  async function toggle(section: string, role: string, field: 'can_read' | 'can_write' | 'can_comment') {
     const current = getPerm(section, role)
     if (!current) return
     const newVal = !current[field]
@@ -55,8 +56,9 @@ export default function PermissionsPage() {
 
     const supabase = createClient()
     const update: Partial<Permission> = { [field]: newVal }
-    if (field === 'can_read' && !newVal) update.can_write = false
+    if (field === 'can_read' && !newVal) { update.can_write = false; update.can_comment = false }
     if (field === 'can_write' && newVal) update.can_read = true
+    if (field === 'can_comment' && newVal) update.can_read = true
 
     await supabase
       .from('section_permissions')
@@ -85,7 +87,7 @@ export default function PermissionsPage() {
             <tr>
               <th className="text-left py-3 pr-6 text-zinc-400 font-medium">섹션</th>
               {ROLES.map(r => (
-                <th key={r.key} className="py-3 px-4 text-center text-zinc-400 font-medium" colSpan={2}>
+                <th key={r.key} className="py-3 px-4 text-center text-zinc-400 font-medium" colSpan={3}>
                   {r.label}
                 </th>
               ))}
@@ -96,6 +98,7 @@ export default function PermissionsPage() {
                 <>
                   <th key={`${r.key}-read`} className="pb-2 px-3 text-center text-xs text-zinc-500 font-normal">읽기</th>
                   <th key={`${r.key}-write`} className="pb-2 px-3 text-center text-xs text-zinc-500 font-normal">쓰기</th>
+                  <th key={`${r.key}-comment`} className="pb-2 px-3 text-center text-xs text-zinc-500 font-normal">댓글</th>
                 </>
               ))}
             </tr>
@@ -134,6 +137,19 @@ export default function PermissionsPage() {
                           {perm?.can_write && <span className="text-[#ffffff] text-xs">✓</span>}
                         </button>
                       </td>
+                      <td key={`${r.key}-comment`} className="py-4 px-3 text-center">
+                        <button
+                          onClick={() => toggle(s.key, r.key, 'can_comment')}
+                          disabled={saving !== null}
+                          className={`w-6 h-6 rounded border transition-colors disabled:opacity-50 ${
+                            perm?.can_comment
+                              ? 'bg-purple-500 border-purple-400'
+                              : 'bg-zinc-800 border-zinc-600'
+                          }`}
+                        >
+                          {perm?.can_comment && <span className="text-[#ffffff] text-xs">✓</span>}
+                        </button>
+                      </td>
                     </>
                   )
                 })}
@@ -143,7 +159,7 @@ export default function PermissionsPage() {
         </table>
       </div>
 
-      <p className="text-xs text-zinc-500">읽기 끄면 쓰기도 자동으로 꺼집니다. 쓰기 켜면 읽기도 자동으로 켜집니다.</p>
+      <p className="text-xs text-zinc-500">읽기 끄면 쓰기·댓글도 자동으로 꺼집니다. 쓰기·댓글 켜면 읽기도 자동으로 켜집니다.</p>
     </div>
   )
 }
