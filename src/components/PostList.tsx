@@ -97,6 +97,9 @@ export default function PostList() {
   async function fetchData() {
     const supabase = createClient()
 
+    // 종료일이 지난 활성 시즌 자동 해제
+    await fetch('/api/seasons/deactivate-expired', { method: 'POST' })
+
     const { data: seasonData } = await supabase
       .from('seasons')
       .select('id, name, is_active')

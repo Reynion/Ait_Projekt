@@ -22,7 +22,7 @@ interface Poll {
 interface Candidate {
   id: number
   post_id: number
-  posts: {
+  music_posts: {
     id: number
     title: string
     artist: string | null
@@ -64,7 +64,7 @@ export default function PollDetailPage() {
 
     const { data: candidatesData } = await supabase
       .from('poll_candidates')
-      .select('id, post_id, posts(id, title, artist, youtube_url, users(nickname))')
+      .select('id, post_id, music_posts(id, title, artist, youtube_url, users(nickname))')
       .eq('poll_id', id)
 
     const { data: votesData } = await supabase
@@ -169,7 +169,7 @@ export default function PollDetailPage() {
               rank === 3 ? 'text-orange-400 font-bold' : 'text-zinc-500'
 
             return candidates.map(candidate => {
-              const post = candidate.posts
+              const post = candidate.music_posts
               if (!post) return null
               const youtubeId = post.youtube_url ? extractYoutubeId(post.youtube_url) : null
               const thumbnail = youtubeId ? getThumbnailUrl(youtubeId) : null

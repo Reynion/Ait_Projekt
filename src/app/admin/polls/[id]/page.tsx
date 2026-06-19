@@ -18,7 +18,7 @@ interface Poll {
 interface Candidate {
   id: number
   post_id: number
-  posts: { title: string; artist: string | null } | null
+  music_posts: { title: string; artist: string | null } | null
   voters: string[]
 }
 
@@ -39,7 +39,7 @@ export default function PollStatsPage() {
 
       const { data: candidatesData } = await supabase
         .from('poll_candidates')
-        .select('id, post_id, posts(title, artist)')
+        .select('id, post_id, music_posts(title, artist)')
         .eq('poll_id', id)
         .order('id', { ascending: true })
 
@@ -118,9 +118,9 @@ export default function PollStatsPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-zinc-500 font-mono w-4">{idx + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white truncate">{candidate.posts?.title ?? '(삭제된 곡)'}</p>
-                    {candidate.posts?.artist && (
-                      <p className="text-xs text-zinc-500">{candidate.posts.artist}</p>
+                    <p className="font-medium text-white truncate">{candidate.music_posts?.title ?? '(삭제된 곡)'}</p>
+                    {candidate.music_posts?.artist && (
+                      <p className="text-xs text-zinc-500">{candidate.music_posts.artist}</p>
                     )}
                   </div>
                   <span className="text-lg font-bold text-white flex-shrink-0">{candidate.voters.length}표</span>
