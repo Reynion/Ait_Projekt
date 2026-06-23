@@ -168,11 +168,11 @@ export default function PitchSpeedPage() {
     return new Blob([ab], { type: 'audio/wav' })
   }
 
-  function audioBufferToMp3(buffer: AudioBuffer): Blob {
+  async function audioBufferToMp3(buffer: AudioBuffer): Promise<Blob> {
+    const { Mp3Encoder } = await import('@breezystack/lamejs')
     const numChannels = buffer.numberOfChannels
     const sampleRate = buffer.sampleRate
-    const lamejs = require('@breezystack/lamejs')
-    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 320)
+    const encoder = new Mp3Encoder(numChannels, sampleRate, 320)
     const blockSize = 1152
     const mp3Data: BlobPart[] = []
 
@@ -190,10 +190,10 @@ export default function PitchSpeedPage() {
     for (let i = 0; i < channels[0].length; i += blockSize) {
       const left = channels[0].subarray(i, i + blockSize)
       const right = numChannels > 1 ? channels[1].subarray(i, i + blockSize) : left
-      const buf = encoder.encodeBuffer(left, right)
+      const buf = encoder.encodeBuffer(left, right) as unknown as Uint8Array<ArrayBuffer>
       if (buf.length > 0) mp3Data.push(buf)
     }
-    const end = encoder.flush()
+    const end = encoder.flush() as unknown as Uint8Array<ArrayBuffer>
     if (end.length > 0) mp3Data.push(end)
 
     return new Blob(mp3Data, { type: 'audio/mp3' })
@@ -210,7 +210,7 @@ export default function PitchSpeedPage() {
         pitchSemitones: pitch,
         playbackRate: tempo,
       })
-      const blob = format === 'mp3' ? audioBufferToMp3(processed) : audioBufferToWav(processed)
+      const blob = format === 'mp3' ? await audioBufferToMp3(processed) : audioBufferToWav(processed)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
