@@ -15,6 +15,7 @@ export default function PitchSpeedPage() {
   const [loading, setLoading] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const audioBufferRef = useRef<AudioBuffer | null>(null)
@@ -39,18 +40,24 @@ export default function PitchSpeedPage() {
   }
 
   async function handleFile(f: File) {
-    if (!f.type.startsWith('audio/')) return
+    if (!f.type.startsWith('audio/') && !f.name.match(/\.(m4a|mp4|aac)$/i)) return
+    setFileError(null)
     setLoading(true)
     stop()
-    await initAudio()
-    const ab = await f.arrayBuffer()
-    const audioBuffer = await audioCtxRef.current!.decodeAudioData(ab)
-    audioBufferRef.current = audioBuffer
-    setDuration(audioBuffer.duration)
-    setCurrentTime(0)
-    offsetRef.current = 0
-    setFile(f)
-    setLoading(false)
+    try {
+      await initAudio()
+      const ab = await f.arrayBuffer()
+      const audioBuffer = await audioCtxRef.current!.decodeAudioData(ab)
+      audioBufferRef.current = audioBuffer
+      setDuration(audioBuffer.duration)
+      setCurrentTime(0)
+      offsetRef.current = 0
+      setFile(f)
+    } catch {
+      setFileError('이 파일은 현재 브라우저에서 재생할 수 없어요. Chrome/Edge에서 시도하거나 mp3, wav 형식으로 변환 후 사용해 주세요.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   function stop() {
@@ -265,6 +272,9 @@ export default function PitchSpeedPage() {
             {loading ? '파일 불러오는 중...' : file ? file.name : '오디오 파일을 드래그하거나 클릭해서 불러오기'}
           </p>
           <p className="text-zinc-500 text-xs">mp3, wav, ogg, m4a, flac 등</p>
+          {fileError && (
+            <p className="text-red-400 text-xs text-center px-2">{fileError}</p>
+          )}
           <input
             id="audio-input"
             type="file"
