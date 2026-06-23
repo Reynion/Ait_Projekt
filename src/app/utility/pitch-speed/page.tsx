@@ -20,8 +20,10 @@ export default function PitchSpeedPage() {
   const audioBufferRef = useRef<AudioBuffer | null>(null)
   const stNodeRef = useRef<SoundTouchNodeType | null>(null)
   const sourceRef = useRef<AudioBufferSourceNode | null>(null)
-  const startTimeRef = useRef(0)
-  const offsetRef = useRef(0)
+  const startRealTimeRef = useRef(0)  // 재생 시작 시 ctx.currentTime
+  const startOffsetRef = useRef(0)    // 재생 시작 시 버퍼 내 오프셋
+  const offsetRef = useRef(0)         // 일시정지/탐색 시 저장되는 오프셋
+  const tempoRef = useRef(1.0)
   const rafRef = useRef<number>(0)
   const isPlayingRef = useRef(false)
 
@@ -79,7 +81,8 @@ export default function PitchSpeedPage() {
 
     const offset = Math.min(offsetRef.current, audioBufferRef.current.duration - 0.01)
     source.start(0, offset)
-    startTimeRef.current = ctx.currentTime - offset
+    startRealTimeRef.current = ctx.currentTime
+    startOffsetRef.current = offset
     sourceRef.current = source
     isPlayingRef.current = true
     setIsPlaying(true)
@@ -96,8 +99,9 @@ export default function PitchSpeedPage() {
 
     function tick() {
       if (!audioCtxRef.current) return
-      const elapsed = audioCtxRef.current.currentTime - startTimeRef.current
-      setCurrentTime(Math.min(elapsed, audioBufferRef.current?.duration ?? 0))
+      const realElapsed = audioCtxRef.current.currentTime - startRealTimeRef.current
+      const bufferPos = startOffsetRef.current + realElapsed * tempoRef.current
+      setCurrentTime(Math.min(bufferPos, audioBufferRef.current?.duration ?? 0))
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
@@ -105,12 +109,22 @@ export default function PitchSpeedPage() {
 
   function pause() {
     if (!audioCtxRef.current || !sourceRef.current) return
-    const elapsed = audioCtxRef.current.currentTime - startTimeRef.current
-    offsetRef.current = Math.min(elapsed, audioBufferRef.current?.duration ?? 0)
+    const realElapsed = audioCtxRef.current.currentTime - startRealTimeRef.current
+    offsetRef.current = Math.min(
+      startOffsetRef.current + realElapsed * tempoRef.current,
+      audioBufferRef.current?.duration ?? 0
+    )
     stop()
   }
 
   function handleTempoChange(v: number) {
+    // tempo 변경 시 기준점 재설정 (이전 tempo로 계산한 현재 버퍼 위치를 새 기준으로)
+    if (audioCtxRef.current && isPlayingRef.current) {
+      const realElapsed = audioCtxRef.current.currentTime - startRealTimeRef.current
+      startOffsetRef.current = startOffsetRef.current + realElapsed * tempoRef.current
+      startRealTimeRef.current = audioCtxRef.current.currentTime
+    }
+    tempoRef.current = v
     setTempo(v)
     if (sourceRef.current) sourceRef.current.playbackRate.value = v
     if (stNodeRef.current) stNodeRef.current.playbackRate.value = v
