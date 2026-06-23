@@ -37,7 +37,7 @@ function autoCorrelate(buffer: Float32Array, sampleRate: number): number {
   let rms = 0
   for (let i = 0; i < SIZE; i++) rms += buffer[i] * buffer[i]
   rms = Math.sqrt(rms / SIZE)
-  if (rms < 0.01) return -1
+  if (rms < 0.04) return -1
 
   let r1 = 0, r2 = SIZE - 1
   const thres = 0.2
@@ -87,6 +87,8 @@ export default function TunerPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number | null>(null)
   const a4Ref = useRef(a4)
+  const recentDetectionsRef = useRef<string[]>([])
+  const recentCentsRef = useRef<number[]>([])
 
   useEffect(() => { a4Ref.current = a4 }, [a4])
 
@@ -113,11 +115,27 @@ export default function TunerPage() {
     if (freq > 0) {
       const result = getNoteFromFreq(freq, a4Ref.current)
       if (result) {
-        setDetectedNote(result.note)
-        setDetectedOctave(result.octave)
-        setDetectedFreq(freq)
-        setCents(result.cents)
+        const key = `${result.note}${result.octave}`
+        const recent = recentDetectionsRef.current
+        recent.push(key)
+        if (recent.length > 5) recent.shift()
+
+        const count = recent.filter(k => k === key).length
+        if (count >= 3) {
+          const recentCents = recentCentsRef.current
+          recentCents.push(result.cents)
+          if (recentCents.length > 5) recentCents.shift()
+          const avgCents = recentCents.reduce((a, b) => a + b, 0) / recentCents.length
+
+          setDetectedNote(result.note)
+          setDetectedOctave(result.octave)
+          setDetectedFreq(freq)
+          setCents(avgCents)
+        }
       }
+    } else {
+      recentDetectionsRef.current = []
+      recentCentsRef.current = []
     }
 
     rafRef.current = requestAnimationFrame(analyze)
