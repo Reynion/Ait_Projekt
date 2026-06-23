@@ -206,14 +206,14 @@ export default function PitchSpeedPage() {
         </div>
 
         {/* 파일 업로드 */}
-        <div
+        <label
+          htmlFor="audio-input"
           className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
             dragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-700 hover:border-zinc-500'
           }`}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
           onDragLeave={() => setDragging(false)}
           onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
-          onClick={() => document.getElementById('audio-input')?.click()}
         >
           <span className="text-4xl">{loading ? '⏳' : '🎵'}</span>
           <p className="text-zinc-300 font-medium text-center">
@@ -227,7 +227,7 @@ export default function PitchSpeedPage() {
             className="hidden"
             onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = '' }}
           />
-        </div>
+        </label>
 
         {/* 플레이어 */}
         {file && !loading && (
@@ -283,10 +283,10 @@ export default function PitchSpeedPage() {
                 onChange={e => handleTempoChange(parseFloat(e.target.value))}
                 className="w-full accent-emerald-500 cursor-pointer"
               />
-              <div className="flex justify-between text-xs text-zinc-600">
-                <span>0.5x</span>
-                <span>1.0x</span>
-                <span>2.0x</span>
+              <div className="relative h-4 text-xs text-zinc-600">
+                <span className="absolute left-0">0.5x</span>
+                <span className="absolute -translate-x-1/2" style={{ left: '33.33%' }}>1.0x</span>
+                <span className="absolute right-0">2.0x</span>
               </div>
             </div>
 
