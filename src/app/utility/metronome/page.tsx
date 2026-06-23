@@ -147,17 +147,12 @@ export default function MetronomePage() {
   const [screenFlash, setScreenFlash] = useState(false)
   const [screenFlashStrong, setScreenFlashStrong] = useState(false)
   const [flashEnabled, setFlashEnabled] = useState(false)
-  const [torchEnabled, setTorchEnabled] = useState(false)
-  const [torchSupported, setTorchSupported] = useState(false)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const nextBeatTimeRef = useRef(0)
   const currentBeatRef = useRef(0)
   const schedulerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const tapTimesRef = useRef<number[]>([])
-  const torchTrackRef = useRef<MediaStreamTrack | null>(null)
-  const torchOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const torchIsOnRef = useRef(false)
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const spbRef = useRef(calcSecondsPerBeat(120, 4))
   const bpmRef = useRef(bpm)
@@ -166,7 +161,6 @@ export default function MetronomePage() {
   const soundTypeRef = useRef(soundType)
   const swingRef = useRef(swing)
   const flashEnabledRef = useRef(flashEnabled)
-  const torchEnabledRef = useRef(torchEnabled)
 
   useEffect(() => { bpmRef.current = bpm }, [bpm])
   useEffect(() => { timeSigRef.current = timeSig }, [timeSig])
@@ -174,21 +168,6 @@ export default function MetronomePage() {
   useEffect(() => { soundTypeRef.current = soundType }, [soundType])
   useEffect(() => { swingRef.current = swing }, [swing])
   useEffect(() => { flashEnabledRef.current = flashEnabled }, [flashEnabled])
-  useEffect(() => { torchEnabledRef.current = torchEnabled }, [torchEnabled])
-
-  useEffect(() => {
-    const checkTorch = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        const track = stream.getVideoTracks()[0]
-        const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean }
-        if (caps.torch) { setTorchSupported(true); torchTrackRef.current = track }
-        else track.stop()
-      } catch { setTorchSupported(false) }
-    }
-    checkTorch()
-    return () => { torchTrackRef.current?.stop() }
-  }, [])
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
@@ -212,18 +191,6 @@ export default function MetronomePage() {
         setScreenFlashStrong(accent === 'accent')
         if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
         flashTimerRef.current = setTimeout(() => setScreenFlash(false), dur)
-      }
-      if (torchEnabledRef.current && torchTrackRef.current && accent !== 'mute') {
-        const dur = Math.min(accent === 'accent' ? 100 : 30, maxDuration)
-        if (!torchIsOnRef.current) {
-          torchIsOnRef.current = true
-          torchTrackRef.current.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] })
-        }
-        if (torchOffTimerRef.current) clearTimeout(torchOffTimerRef.current)
-        torchOffTimerRef.current = setTimeout(() => {
-          torchIsOnRef.current = false
-          torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
-        }, dur)
       }
     }, Math.max(0, delay))
   }, [])
@@ -257,8 +224,6 @@ export default function MetronomePage() {
     if (schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current)
     setIsPlaying(false)
     setCurrentBeat(-1)
-    torchIsOnRef.current = false
-    torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
   }, [])
 
   useEffect(() => {
@@ -444,21 +409,6 @@ export default function MetronomePage() {
             <button onClick={() => setFlashEnabled(v => !v)}
               className={`w-12 h-6 rounded-full transition-colors relative ${flashEnabled ? 'bg-emerald-600' : 'bg-zinc-700'}`}>
               <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${flashEnabled ? 'left-7' : 'left-1'}`} />
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className={`text-sm font-medium ${torchSupported ? 'text-white' : 'text-zinc-600'}`}>플래시 깜빡임</p>
-              <p className="text-zinc-500 text-xs mt-0.5">
-                {torchSupported ? '강박에 더 길게 켜져요' : 'Android Chrome에서만 지원돼요'}
-              </p>
-            </div>
-            <button
-              onClick={() => torchSupported && setTorchEnabled(v => !v)}
-              disabled={!torchSupported}
-              className={`w-12 h-6 rounded-full transition-colors relative ${!torchSupported ? 'opacity-30 cursor-not-allowed' : ''} ${torchEnabled && torchSupported ? 'bg-emerald-600' : 'bg-zinc-700'}`}
-            >
-              <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${torchEnabled && torchSupported ? 'left-7' : 'left-1'}`} />
             </button>
           </div>
         </div>
