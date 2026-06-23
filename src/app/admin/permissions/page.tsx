@@ -10,6 +10,7 @@ const SECTIONS = [
   { key: 'schedule', label: '일정' },
   { key: 'records', label: '기록' },
   { key: 'guestbook', label: '방명록' },
+  { key: 'utility', label: '유틸리티' },
 ]
 
 const ROLES = [

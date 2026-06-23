@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase'
 
-const ALL_SECTIONS = ['posts', 'board', 'polls', 'schedule', 'records', 'guestbook']
+const ALL_SECTIONS = ['posts', 'board', 'polls', 'schedule', 'records', 'guestbook', 'utility']
 
 export async function getWritePermission(section: string): Promise<boolean> {
   const supabase = createClient()

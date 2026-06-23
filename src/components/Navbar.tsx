@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { label: '일정', href: '/schedule' },
   { label: '기록', href: '/records' },
   { label: '방명록', href: '/guestbook' },
+  { label: '유틸리티', href: '/utility' },
 ]
 
 function roleBadgeClass(role: string) {
@@ -203,7 +204,7 @@ export default function Navbar() {
 
   const sectionKeyMap: Record<string, string> = {
     '/posts': 'posts', '/board': 'board', '/polls': 'polls',
-    '/schedule': 'schedule', '/records': 'records', '/guestbook': 'guestbook',
+    '/schedule': 'schedule', '/records': 'records', '/guestbook': 'guestbook', '/utility': 'utility',
   }
 
   const filteredNavItems = NAV_ITEMS.filter(item => {

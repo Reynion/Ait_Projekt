@@ -46,7 +46,7 @@ export default function Home() {
   const [recentRecords, setRecentRecords] = useState<RecentItem[]>([])
   const [hasActivePoll, setHasActivePoll] = useState(false)
   const [showNameModal, setShowNameModal] = useState(false)
-  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({ posts: true, board: true, polls: true, schedule: true, records: true, guestbook: true })
+  const [allowedSections, setAllowedSections] = useState<Record<string, boolean>>({ posts: true, board: true, polls: true, schedule: true, records: true, guestbook: true, utility: true })
   const [recentGuestbook, setRecentGuestbook] = useState<RecentItem[]>([])
 
   useFCMToken(userId)
@@ -147,6 +147,7 @@ export default function Home() {
     { href: '/schedule', section: 'schedule', icon: '📅', title: '일정', desc: '밴드 일정을 달력으로 한눈에 확인해요.' },
     { href: '/records', section: 'records', icon: '🎬', title: '기록', desc: '공연과 연습의 소중한 순간을 기록해요.' },
     { href: '/guestbook', section: 'guestbook', icon: '📝', title: '방명록', desc: '밴드에게 하고 싶은 말을 남겨요.' },
+    { href: '/utility', section: 'utility', icon: '🛠️', title: '유틸리티', desc: '피치·속도 조절 등 연습에 유용한 도구들이에요.' },
   ]
   const cards = allCards.filter(c => allowedSections[c.section] !== false)
 

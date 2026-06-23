@@ -1,0 +1,339 @@
+'use client'
+
+import { useEffect, useRef, useState } from 'react'
+import Navbar from '@/components/Navbar'
+import Link from 'next/link'
+import type { SoundTouchNode as SoundTouchNodeType } from '@soundtouchjs/audio-worklet'
+
+export default function PitchSpeedPage() {
+  const [file, setFile] = useState<File | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [tempo, setTempo] = useState(1.0)
+  const [pitch, setPitch] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [dragging, setDragging] = useState(false)
+  const [exporting, setExporting] = useState(false)
+
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const audioBufferRef = useRef<AudioBuffer | null>(null)
+  const stNodeRef = useRef<SoundTouchNodeType | null>(null)
+  const sourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const startTimeRef = useRef(0)
+  const offsetRef = useRef(0)
+  const rafRef = useRef<number>(0)
+  const isPlayingRef = useRef(false)
+
+  async function initAudio() {
+    if (audioCtxRef.current) return
+    const { SoundTouchNode } = await import('@soundtouchjs/audio-worklet')
+    const ctx = new AudioContext()
+    audioCtxRef.current = ctx
+    await SoundTouchNode.register(ctx, '/soundtouch-processor.js')
+    const stNode = new SoundTouchNode({ context: ctx })
+    stNode.connect(ctx.destination)
+    stNodeRef.current = stNode
+  }
+
+  async function handleFile(f: File) {
+    if (!f.type.startsWith('audio/')) return
+    setLoading(true)
+    stop()
+    await initAudio()
+    const ab = await f.arrayBuffer()
+    const audioBuffer = await audioCtxRef.current!.decodeAudioData(ab)
+    audioBufferRef.current = audioBuffer
+    setDuration(audioBuffer.duration)
+    setCurrentTime(0)
+    offsetRef.current = 0
+    setFile(f)
+    setLoading(false)
+  }
+
+  function stop() {
+    isPlayingRef.current = false
+    if (sourceRef.current) {
+      try { sourceRef.current.stop() } catch (_) {}
+      sourceRef.current.disconnect()
+      sourceRef.current = null
+    }
+    setIsPlaying(false)
+    cancelAnimationFrame(rafRef.current)
+  }
+
+  function play() {
+    if (!audioBufferRef.current || !audioCtxRef.current || !stNodeRef.current) return
+
+    stop()
+
+    const ctx = audioCtxRef.current
+    const stNode = stNodeRef.current
+    const source = ctx.createBufferSource()
+    source.buffer = audioBufferRef.current
+    source.playbackRate.value = tempo
+    source.connect(stNode)
+
+    stNode.playbackRate.value = tempo
+    stNode.pitchSemitones.value = pitch
+
+    const offset = Math.min(offsetRef.current, audioBufferRef.current.duration - 0.01)
+    source.start(0, offset)
+    startTimeRef.current = ctx.currentTime - offset
+    sourceRef.current = source
+    isPlayingRef.current = true
+    setIsPlaying(true)
+
+    source.addEventListener('ended', () => {
+      if (isPlayingRef.current) {
+        isPlayingRef.current = false
+        setIsPlaying(false)
+        offsetRef.current = 0
+        setCurrentTime(0)
+        cancelAnimationFrame(rafRef.current)
+      }
+    })
+
+    function tick() {
+      if (!audioCtxRef.current) return
+      const elapsed = audioCtxRef.current.currentTime - startTimeRef.current
+      setCurrentTime(Math.min(elapsed, audioBufferRef.current?.duration ?? 0))
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+  }
+
+  function pause() {
+    if (!audioCtxRef.current || !sourceRef.current) return
+    const elapsed = audioCtxRef.current.currentTime - startTimeRef.current
+    offsetRef.current = Math.min(elapsed, audioBufferRef.current?.duration ?? 0)
+    stop()
+  }
+
+  function handleTempoChange(v: number) {
+    setTempo(v)
+    if (sourceRef.current) sourceRef.current.playbackRate.value = v
+    if (stNodeRef.current) stNodeRef.current.playbackRate.value = v
+  }
+
+  function handlePitchChange(v: number) {
+    setPitch(v)
+    if (stNodeRef.current) stNodeRef.current.pitchSemitones.value = v
+  }
+
+  function handleSeek(e: React.MouseEvent<HTMLDivElement>) {
+    if (!duration) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
+    offsetRef.current = ratio * duration
+    setCurrentTime(offsetRef.current)
+    if (isPlayingRef.current) play()
+  }
+
+  function audioBufferToWav(buffer: AudioBuffer): Blob {
+    const numChannels = buffer.numberOfChannels
+    const sampleRate = buffer.sampleRate
+    const blockAlign = numChannels * 2
+    const dataSize = buffer.length * blockAlign
+    const ab = new ArrayBuffer(44 + dataSize)
+    const view = new DataView(ab)
+    const ws = (off: number, str: string) => { for (let i = 0; i < str.length; i++) view.setUint8(off + i, str.charCodeAt(i)) }
+    ws(0, 'RIFF'); view.setUint32(4, 36 + dataSize, true); ws(8, 'WAVE')
+    ws(12, 'fmt '); view.setUint32(16, 16, true); view.setUint16(20, 1, true)
+    view.setUint16(22, numChannels, true); view.setUint32(24, sampleRate, true)
+    view.setUint32(28, sampleRate * blockAlign, true); view.setUint16(32, blockAlign, true)
+    view.setUint16(34, 16, true); ws(36, 'data'); view.setUint32(40, dataSize, true)
+    let off = 44
+    for (let i = 0; i < buffer.length; i++) {
+      for (let ch = 0; ch < numChannels; ch++) {
+        const s = Math.max(-1, Math.min(1, buffer.getChannelData(ch)[i]))
+        view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+        off += 2
+      }
+    }
+    return new Blob([ab], { type: 'audio/wav' })
+  }
+
+  async function handleExport() {
+    if (!audioBufferRef.current || !file) return
+    setExporting(true)
+    try {
+      const { processOffline } = await import('@soundtouchjs/audio-worklet')
+      const processed = await processOffline({
+        input: audioBufferRef.current,
+        processorUrl: '/soundtouch-processor.js',
+        pitchSemitones: pitch,
+        playbackRate: tempo,
+      })
+      const blob = audioBufferToWav(processed)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const baseName = file.name.replace(/\.[^.]+$/, '')
+      const pitchStr = pitch > 0 ? `+${pitch}` : `${pitch}`
+      a.download = `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x.wav`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  function formatTime(s: number) {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(rafRef.current)
+      audioCtxRef.current?.close()
+    }
+  }, [])
+
+  return (
+    <main className="min-h-screen bg-zinc-950">
+      <Navbar />
+      <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
+        <Link href="/utility" className="text-zinc-400 hover:text-white transition-colors text-sm w-fit">
+          ← 유틸리티
+        </Link>
+
+        <div>
+          <h1 className="text-2xl font-bold text-white">🎛 피치 / 속도 조절</h1>
+          <p className="text-zinc-400 text-sm mt-1">오디오 파일을 불러와 피치와 속도를 독립적으로 조절해 연습하세요.</p>
+        </div>
+
+        {/* 파일 업로드 */}
+        <div
+          className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-colors ${
+            dragging ? 'border-emerald-500 bg-emerald-500/5' : 'border-zinc-700 hover:border-zinc-500'
+          }`}
+          onDragOver={e => { e.preventDefault(); setDragging(true) }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
+          onClick={() => document.getElementById('audio-input')?.click()}
+        >
+          <span className="text-4xl">{loading ? '⏳' : '🎵'}</span>
+          <p className="text-zinc-300 font-medium text-center">
+            {loading ? '파일 불러오는 중...' : file ? file.name : '오디오 파일을 드래그하거나 클릭해서 불러오기'}
+          </p>
+          <p className="text-zinc-500 text-xs">mp3, wav, ogg, m4a, flac 등</p>
+          <input
+            id="audio-input"
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={e => { if (e.target.files?.[0]) handleFile(e.target.files[0]); e.target.value = '' }}
+          />
+        </div>
+
+        {/* 플레이어 */}
+        {file && !loading && (
+          <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col gap-6">
+
+            {/* 프로그레스바 + 시간 */}
+            <div className="flex flex-col gap-2">
+              <div
+                className="w-full h-2 bg-zinc-700 rounded-full cursor-pointer group relative"
+                onClick={handleSeek}
+              >
+                <div
+                  className="h-2 bg-emerald-500 rounded-full transition-none"
+                  style={{ width: duration ? `${(currentTime / duration) * 100}%` : '0%' }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-zinc-500">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* 재생/일시정지 */}
+            <div className="flex justify-center">
+              <button
+                onClick={isPlaying ? pause : play}
+                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center justify-center text-[#ffffff] text-2xl"
+              >
+                {isPlaying ? '⏸' : '▶'}
+              </button>
+            </div>
+
+            {/* 속도 슬라이더 */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-zinc-200">속도</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-emerald-400 w-14 text-right">{tempo.toFixed(2)}x</span>
+                  <button
+                    onClick={() => handleTempoChange(1.0)}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-700 hover:border-zinc-500 px-2 py-0.5 rounded transition-colors"
+                  >
+                    리셋
+                  </button>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="2.0"
+                step="0.05"
+                value={tempo}
+                onChange={e => handleTempoChange(parseFloat(e.target.value))}
+                className="w-full accent-emerald-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-zinc-600">
+                <span>0.5x</span>
+                <span>1.0x</span>
+                <span>2.0x</span>
+              </div>
+            </div>
+
+            {/* 피치 슬라이더 */}
+            <div className="flex flex-col gap-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-zinc-200">피치</label>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono text-blue-400 w-14 text-right">
+                    {pitch > 0 ? `+${pitch}` : pitch} 반음
+                  </span>
+                  <button
+                    onClick={() => handlePitchChange(0)}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 border border-zinc-700 hover:border-zinc-500 px-2 py-0.5 rounded transition-colors"
+                  >
+                    리셋
+                  </button>
+                </div>
+              </div>
+              <input
+                type="range"
+                min="-12"
+                max="12"
+                step="1"
+                value={pitch}
+                onChange={e => handlePitchChange(parseInt(e.target.value))}
+                className="w-full accent-blue-500 cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-zinc-600">
+                <span>-12</span>
+                <span>0</span>
+                <span>+12</span>
+              </div>
+            </div>
+
+            {/* 내보내기 */}
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {exporting ? '⏳ WAV 변환 중...' : '⬇ WAV로 내보내기'}
+            </button>
+
+          </div>
+        )}
+      </div>
+    </main>
+  )
+}
