@@ -168,7 +168,38 @@ export default function PitchSpeedPage() {
     return new Blob([ab], { type: 'audio/wav' })
   }
 
-  async function handleExport() {
+  function audioBufferToMp3(buffer: AudioBuffer): Blob {
+    const numChannels = buffer.numberOfChannels
+    const sampleRate = buffer.sampleRate
+    const lamejs = require('@breezystack/lamejs')
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128)
+    const blockSize = 1152
+    const mp3Data: BlobPart[] = []
+
+    const channels: Int16Array[] = []
+    for (let ch = 0; ch < numChannels; ch++) {
+      const float = buffer.getChannelData(ch)
+      const int16 = new Int16Array(float.length)
+      for (let i = 0; i < float.length; i++) {
+        const s = Math.max(-1, Math.min(1, float[i]))
+        int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF
+      }
+      channels.push(int16)
+    }
+
+    for (let i = 0; i < channels[0].length; i += blockSize) {
+      const left = channels[0].subarray(i, i + blockSize)
+      const right = numChannels > 1 ? channels[1].subarray(i, i + blockSize) : left
+      const buf = encoder.encodeBuffer(left, right)
+      if (buf.length > 0) mp3Data.push(buf)
+    }
+    const end = encoder.flush()
+    if (end.length > 0) mp3Data.push(end)
+
+    return new Blob(mp3Data, { type: 'audio/mp3' })
+  }
+
+  async function handleExport(format: 'wav' | 'mp3') {
     if (!audioBufferRef.current || !file) return
     setExporting(true)
     try {
@@ -179,13 +210,13 @@ export default function PitchSpeedPage() {
         pitchSemitones: pitch,
         playbackRate: tempo,
       })
-      const blob = audioBufferToWav(processed)
+      const blob = format === 'mp3' ? audioBufferToMp3(processed) : audioBufferToWav(processed)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       const baseName = file.name.replace(/\.[^.]+$/, '')
       const pitchStr = pitch > 0 ? `+${pitch}` : `${pitch}`
-      a.download = `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x.wav`
+      a.download = `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x.${format}`
       a.click()
       URL.revokeObjectURL(url)
     } finally {
@@ -345,13 +376,22 @@ export default function PitchSpeedPage() {
             </div>
 
             {/* 내보내기 */}
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              {exporting ? '⏳ WAV 변환 중...' : '⬇ WAV로 내보내기'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleExport('wav')}
+                disabled={exporting}
+                className="flex-1 py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                {exporting ? '⏳ 변환 중...' : '⬇ WAV'}
+              </button>
+              <button
+                onClick={() => handleExport('mp3')}
+                disabled={exporting}
+                className="flex-1 py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                {exporting ? '⏳ 변환 중...' : '⬇ MP3'}
+              </button>
+            </div>
 
           </div>
         )}

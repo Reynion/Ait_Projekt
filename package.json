@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@breezystack/lamejs": "^1.2.7",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@soundtouchjs/audio-worklet": "^2.0.4",
     "@supabase/ssr": "^0.10.3",
