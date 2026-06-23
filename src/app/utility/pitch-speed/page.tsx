@@ -88,13 +88,13 @@ export default function PitchSpeedPage() {
     setIsPlaying(true)
 
     source.addEventListener('ended', () => {
-      if (isPlayingRef.current) {
-        isPlayingRef.current = false
-        setIsPlaying(false)
-        offsetRef.current = 0
-        setCurrentTime(0)
-        cancelAnimationFrame(rafRef.current)
-      }
+      // sourceRef.current가 이 소스가 아니면 stop()으로 중지된 것 → 무시
+      if (sourceRef.current !== source) return
+      isPlayingRef.current = false
+      setIsPlaying(false)
+      offsetRef.current = 0
+      setCurrentTime(0)
+      cancelAnimationFrame(rafRef.current)
     })
 
     function tick() {
