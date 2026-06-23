@@ -26,17 +26,104 @@ const TIME_SIGNATURES = {
   ],
 }
 
-// 분모에 따른 비트 간격 (4분음표 기준 BPM 대비)
-// division 2: 2분음표 → 4분음표의 2배
-// division 4: 4분음표 → 기준
-// division 8: 8분음표 → 4분음표의 절반
 function calcSecondsPerBeat(bpm: number, division: number): number {
   return (60 / bpm) * (4 / division)
 }
 
 type BeatAccent = 'accent' | 'normal' | 'mute'
+type SoundType = 'beep' | 'click' | 'woodblock' | 'sine' | 'square' | 'rimshot'
 
-// 박자별 기본 강박 패턴
+const SOUNDS: { type: SoundType; label: string }[] = [
+  { type: 'beep',      label: 'Beep' },
+  { type: 'click',     label: 'Click' },
+  { type: 'woodblock', label: 'Wood' },
+  { type: 'sine',      label: 'Sine' },
+  { type: 'square',    label: 'Square' },
+  { type: 'rimshot',   label: 'Rim' },
+]
+
+function playSound(ctx: AudioContext, isAccent: boolean, time: number, type: SoundType) {
+  switch (type) {
+    case 'beep': {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.frequency.value = isAccent ? 1000 : 800
+      gain.gain.setValueAtTime(isAccent ? 1.0 : 0.5, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05)
+      osc.start(time); osc.stop(time + 0.05)
+      break
+    }
+    case 'click': {
+      const n = Math.floor(ctx.sampleRate * 0.005)
+      const buf = ctx.createBuffer(1, n, ctx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1
+      const src = ctx.createBufferSource(); src.buffer = buf
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(isAccent ? 1.5 : 0.8, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.005)
+      src.connect(gain); gain.connect(ctx.destination)
+      src.start(time)
+      break
+    }
+    case 'woodblock': {
+      const n = Math.floor(ctx.sampleRate * 0.08)
+      const buf = ctx.createBuffer(1, n, ctx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1
+      const src = ctx.createBufferSource(); src.buffer = buf
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = isAccent ? 1200 : 900
+      filter.Q.value = 10
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(isAccent ? 1.5 : 0.8, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.08)
+      src.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
+      src.start(time)
+      break
+    }
+    case 'sine': {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'sine'
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.frequency.value = isAccent ? 600 : 440
+      gain.gain.setValueAtTime(isAccent ? 0.8 : 0.4, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.12)
+      osc.start(time); osc.stop(time + 0.12)
+      break
+    }
+    case 'square': {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = 'square'
+      osc.connect(gain); gain.connect(ctx.destination)
+      osc.frequency.value = isAccent ? 800 : 600
+      gain.gain.setValueAtTime(isAccent ? 0.3 : 0.15, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.04)
+      osc.start(time); osc.stop(time + 0.04)
+      break
+    }
+    case 'rimshot': {
+      const n = Math.floor(ctx.sampleRate * 0.06)
+      const buf = ctx.createBuffer(1, n, ctx.sampleRate)
+      const d = buf.getChannelData(0)
+      for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1
+      const src = ctx.createBufferSource(); src.buffer = buf
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'highpass'; filter.frequency.value = 3000
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(isAccent ? 1.2 : 0.6, time)
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06)
+      src.connect(filter); filter.connect(gain); gain.connect(ctx.destination)
+      src.start(time)
+      break
+    }
+  }
+}
+
 function getDefaultAccents(beats: number, label: string): BeatAccent[] {
   const arr: BeatAccent[] = Array(beats).fill('normal')
   arr[0] = 'accent'
@@ -50,11 +137,12 @@ const ALL_SIGNATURES = Object.values(TIME_SIGNATURES).flat()
 
 export default function MetronomePage() {
   const [bpm, setBpm] = useState(120)
-  const [timeSig, setTimeSig] = useState(ALL_SIGNATURES[4]) // 4/4 기본
+  const [timeSig, setTimeSig] = useState(ALL_SIGNATURES[4])
   const [sigGroup, setSigGroup] = useState<keyof typeof TIME_SIGNATURES>('단순박자')
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentBeat, setCurrentBeat] = useState(-1)
   const [beatAccents, setBeatAccents] = useState<BeatAccent[]>(getDefaultAccents(4, '4/4'))
+  const [soundType, setSoundType] = useState<SoundType>('beep')
   const [swing, setSwing] = useState(50)
   const [screenFlash, setScreenFlash] = useState(false)
   const [screenFlashStrong, setScreenFlashStrong] = useState(false)
@@ -75,6 +163,7 @@ export default function MetronomePage() {
   const bpmRef = useRef(bpm)
   const timeSigRef = useRef(timeSig)
   const beatAccentsRef = useRef(beatAccents)
+  const soundTypeRef = useRef(soundType)
   const swingRef = useRef(swing)
   const flashEnabledRef = useRef(flashEnabled)
   const torchEnabledRef = useRef(torchEnabled)
@@ -82,6 +171,7 @@ export default function MetronomePage() {
   useEffect(() => { bpmRef.current = bpm }, [bpm])
   useEffect(() => { timeSigRef.current = timeSig }, [timeSig])
   useEffect(() => { beatAccentsRef.current = beatAccents }, [beatAccents])
+  useEffect(() => { soundTypeRef.current = soundType }, [soundType])
   useEffect(() => { swingRef.current = swing }, [swing])
   useEffect(() => { flashEnabledRef.current = flashEnabled }, [flashEnabled])
   useEffect(() => { torchEnabledRef.current = torchEnabled }, [torchEnabled])
@@ -92,15 +182,9 @@ export default function MetronomePage() {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         const track = stream.getVideoTracks()[0]
         const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean }
-        if (caps.torch) {
-          setTorchSupported(true)
-          torchTrackRef.current = track
-        } else {
-          track.stop()
-        }
-      } catch {
-        setTorchSupported(false)
-      }
+        if (caps.torch) { setTorchSupported(true); torchTrackRef.current = track }
+        else track.stop()
+      } catch { setTorchSupported(false) }
     }
     checkTorch()
     return () => { torchTrackRef.current?.stop() }
@@ -114,33 +198,23 @@ export default function MetronomePage() {
   const scheduleClick = useCallback((beatIndex: number, time: number) => {
     const ctx = getAudioCtx()
     const accent = beatAccentsRef.current[beatIndex] ?? 'normal'
-
     if (accent !== 'mute') {
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
-      osc.connect(gain)
-      gain.connect(ctx.destination)
-      osc.frequency.value = accent === 'accent' ? 1000 : 800
-      gain.gain.setValueAtTime(accent === 'accent' ? 1.0 : 0.5, time)
-      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05)
-      osc.start(time)
-      osc.stop(time + 0.05)
+      playSound(ctx, accent === 'accent', time, soundTypeRef.current)
     }
 
     const delay = (time - ctx.currentTime) * 1000
-    const spbMs = spbRef.current * 1000
-    const maxDuration = spbMs * 0.4  // 비트 간격의 40% 이내로 제한
+    const maxDuration = spbRef.current * 1000 * 0.4
     setTimeout(() => {
       setCurrentBeat(beatIndex)
       if (flashEnabledRef.current && accent !== 'mute') {
-        const flashDuration = Math.min(accent === 'accent' ? 80 : 40, maxDuration)
+        const dur = Math.min(accent === 'accent' ? 80 : 40, maxDuration)
         setScreenFlash(true)
         setScreenFlashStrong(accent === 'accent')
         if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
-        flashTimerRef.current = setTimeout(() => setScreenFlash(false), flashDuration)
+        flashTimerRef.current = setTimeout(() => setScreenFlash(false), dur)
       }
       if (torchEnabledRef.current && torchTrackRef.current && accent !== 'mute') {
-        const torchDuration = Math.min(accent === 'accent' ? 100 : 30, maxDuration)
+        const dur = Math.min(accent === 'accent' ? 100 : 30, maxDuration)
         if (!torchIsOnRef.current) {
           torchIsOnRef.current = true
           torchTrackRef.current.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] })
@@ -149,7 +223,7 @@ export default function MetronomePage() {
         torchOffTimerRef.current = setTimeout(() => {
           torchIsOnRef.current = false
           torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
-        }, torchDuration)
+        }, dur)
       }
     }, Math.max(0, delay))
   }, [])
@@ -160,17 +234,13 @@ export default function MetronomePage() {
     spbRef.current = spb
     const swingRatio = swingRef.current / 100
     const scheduleAhead = 0.1
-
     while (nextBeatTimeRef.current < ctx.currentTime + scheduleAhead) {
       const beatIndex = currentBeatRef.current
-      // 홀수 비트에 스윙 오프셋 적용: spb * (2*swingRatio - 1)
-      // swingRatio=0.5 → offset=0 (straight), swingRatio=0.67 → offset≈0.34*spb (shuffle)
       const swingOffset = beatIndex % 2 === 1 ? spb * (swingRatio * 2 - 1) : 0
       scheduleClick(beatIndex, nextBeatTimeRef.current + swingOffset)
       nextBeatTimeRef.current += spb
       currentBeatRef.current = (currentBeatRef.current + 1) % timeSigRef.current.beats
     }
-
     schedulerTimerRef.current = setTimeout(scheduler, 25)
   }, [scheduleClick])
 
@@ -191,7 +261,6 @@ export default function MetronomePage() {
     torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
   }, [])
 
-  // BPM/박자/스윙 변경 시 재시작
   useEffect(() => {
     if (isPlaying) {
       if (schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current)
@@ -209,7 +278,6 @@ export default function MetronomePage() {
 
   const handleTap = () => {
     const now = performance.now()
-    // 2초 이상 지나면 초기화
     if (tapTimesRef.current.length > 0 && now - tapTimesRef.current[tapTimesRef.current.length - 1] > 2000) {
       tapTimesRef.current = []
     }
@@ -254,7 +322,6 @@ export default function MetronomePage() {
           style={{ backgroundColor: 'white', opacity: screenFlash ? (screenFlashStrong ? 0.7 : 0.4) : 0 }}
         />
       )}
-
       <Navbar />
       <div className="max-w-lg mx-auto px-4 py-8 flex flex-col gap-8">
         <Link href="/utility" className="text-zinc-400 hover:text-white transition-colors text-sm w-fit">← 유틸리티</Link>
@@ -264,10 +331,7 @@ export default function MetronomePage() {
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 flex flex-col gap-5">
           <div className="text-center">
             <input
-              type="number"
-              value={bpm}
-              min={40}
-              max={240}
+              type="number" value={bpm} min={40} max={240}
               onChange={e => handleBpmInput(Number(e.target.value))}
               className="text-7xl font-bold text-white bg-transparent text-center w-full outline-none"
             />
@@ -286,10 +350,7 @@ export default function MetronomePage() {
             className="w-full accent-emerald-500"
           />
           <div className="flex flex-col gap-1.5">
-            <button
-              onClick={handleTap}
-              className="w-full py-3 rounded-xl bg-zinc-700 text-zinc-200 font-semibold hover:bg-zinc-600 active:scale-95 transition-all"
-            >
+            <button onClick={handleTap} className="w-full py-3 rounded-xl bg-zinc-700 text-zinc-200 font-semibold hover:bg-zinc-600 active:scale-95 transition-all">
               탭 템포
             </button>
             <p className="text-xs text-zinc-500 text-center">박자에 맞춰 탭하면 BPM이 자동으로 계산돼요 · 2초 이상 쉬면 초기화돼요</p>
@@ -301,24 +362,28 @@ export default function MetronomePage() {
           <p className="text-sm font-semibold text-zinc-400">박자</p>
           <div className="flex gap-2 flex-wrap">
             {(Object.keys(TIME_SIGNATURES) as (keyof typeof TIME_SIGNATURES)[]).map(group => (
-              <button
-                key={group}
-                onClick={() => setSigGroup(group)}
+              <button key={group} onClick={() => setSigGroup(group)}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${sigGroup === group ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'}`}
-              >
-                {group}
-              </button>
+              >{group}</button>
             ))}
           </div>
           <div className="flex flex-wrap gap-2">
             {TIME_SIGNATURES[sigGroup].map(sig => (
-              <button
-                key={sig.label}
-                onClick={() => selectTimeSig(sig)}
+              <button key={sig.label} onClick={() => selectTimeSig(sig)}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${timeSig.label === sig.label ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
-              >
-                {sig.label}
-              </button>
+              >{sig.label}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* 소리 선택 */}
+        <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 flex flex-col gap-4">
+          <p className="text-sm font-semibold text-zinc-400">소리</p>
+          <div className="grid grid-cols-3 gap-2">
+            {SOUNDS.map(s => (
+              <button key={s.type} onClick={() => setSoundType(s.type)}
+                className={`py-2.5 rounded-xl text-sm font-semibold transition-colors ${soundType === s.type ? 'bg-emerald-600 text-white' : 'bg-zinc-800 text-zinc-300 hover:bg-zinc-700'}`}
+              >{s.label}</button>
             ))}
           </div>
         </div>
@@ -331,9 +396,7 @@ export default function MetronomePage() {
           </div>
           <div className="flex justify-center gap-3 flex-wrap min-h-[28px] items-center">
             {beatAccents.map((accent, i) => (
-              <button
-                key={i}
-                onClick={() => toggleBeatAccent(i)}
+              <button key={i} onClick={() => toggleBeatAccent(i)}
                 className={`rounded-full transition-all duration-75 ${getBeatStyle(accent, currentBeat === i)}`}
                 title={accent === 'accent' ? '강박' : accent === 'normal' ? '약박' : '무음'}
               />
@@ -352,15 +415,12 @@ export default function MetronomePage() {
             <p className="text-sm font-semibold text-zinc-400">스윙</p>
             <p className="text-white font-semibold text-sm">{swingLabel}</p>
           </div>
-          <input
-            type="range" min={50} max={75} value={swing}
+          <input type="range" min={50} max={75} value={swing}
             onChange={e => setSwing(Number(e.target.value))}
             className="w-full accent-emerald-500"
           />
           <div className="flex justify-between text-xs text-zinc-600">
-            <span>Straight</span>
-            <span>Shuffle</span>
-            <span>Heavy</span>
+            <span>Straight</span><span>Shuffle</span><span>Heavy</span>
           </div>
           <p className="text-xs text-zinc-500">홀수 비트를 뒤로 밀어 딱-따닥 리듬을 만들어요</p>
         </div>
@@ -381,10 +441,8 @@ export default function MetronomePage() {
               <p className="text-white text-sm font-medium">화면 깜빡임</p>
               <p className="text-zinc-500 text-xs mt-0.5">강박에 더 밝게 깜빡여요</p>
             </div>
-            <button
-              onClick={() => setFlashEnabled(v => !v)}
-              className={`w-12 h-6 rounded-full transition-colors relative ${flashEnabled ? 'bg-emerald-600' : 'bg-zinc-700'}`}
-            >
+            <button onClick={() => setFlashEnabled(v => !v)}
+              className={`w-12 h-6 rounded-full transition-colors relative ${flashEnabled ? 'bg-emerald-600' : 'bg-zinc-700'}`}>
               <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${flashEnabled ? 'left-7' : 'left-1'}`} />
             </button>
           </div>
