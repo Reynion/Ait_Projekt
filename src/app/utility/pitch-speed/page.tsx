@@ -172,7 +172,7 @@ export default function PitchSpeedPage() {
     const numChannels = buffer.numberOfChannels
     const sampleRate = buffer.sampleRate
     const lamejs = require('@breezystack/lamejs')
-    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 128)
+    const encoder = new lamejs.Mp3Encoder(numChannels, sampleRate, 320)
     const blockSize = 1152
     const mp3Data: BlobPart[] = []
 
