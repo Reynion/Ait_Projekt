@@ -57,6 +57,7 @@ export default function MetronomePage() {
   const [beatAccents, setBeatAccents] = useState<BeatAccent[]>(getDefaultAccents(4, '4/4'))
   const [swing, setSwing] = useState(50)
   const [screenFlash, setScreenFlash] = useState(false)
+  const [screenFlashStrong, setScreenFlashStrong] = useState(false)
   const [flashEnabled, setFlashEnabled] = useState(false)
   const [torchEnabled, setTorchEnabled] = useState(false)
   const [torchSupported, setTorchSupported] = useState(false)
@@ -68,7 +69,9 @@ export default function MetronomePage() {
   const tapTimesRef = useRef<number[]>([])
   const torchTrackRef = useRef<MediaStreamTrack | null>(null)
   const torchOffTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const torchIsOnRef = useRef(false)
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const spbRef = useRef(calcSecondsPerBeat(120, 4))
   const bpmRef = useRef(bpm)
   const timeSigRef = useRef(timeSig)
   const beatAccentsRef = useRef(beatAccents)
@@ -125,19 +128,28 @@ export default function MetronomePage() {
     }
 
     const delay = (time - ctx.currentTime) * 1000
+    const spbMs = spbRef.current * 1000
+    const maxDuration = spbMs * 0.4  // 비트 간격의 40% 이내로 제한
     setTimeout(() => {
       setCurrentBeat(beatIndex)
       if (flashEnabledRef.current && accent !== 'mute') {
+        const flashDuration = Math.min(accent === 'accent' ? 80 : 40, maxDuration)
         setScreenFlash(true)
+        setScreenFlashStrong(accent === 'accent')
         if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
-        flashTimerRef.current = setTimeout(() => setScreenFlash(false), accent === 'accent' ? 80 : 40)
+        flashTimerRef.current = setTimeout(() => setScreenFlash(false), flashDuration)
       }
       if (torchEnabledRef.current && torchTrackRef.current && accent !== 'mute') {
-        torchTrackRef.current.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] })
+        const torchDuration = Math.min(accent === 'accent' ? 100 : 30, maxDuration)
+        if (!torchIsOnRef.current) {
+          torchIsOnRef.current = true
+          torchTrackRef.current.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] })
+        }
         if (torchOffTimerRef.current) clearTimeout(torchOffTimerRef.current)
         torchOffTimerRef.current = setTimeout(() => {
+          torchIsOnRef.current = false
           torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
-        }, accent === 'accent' ? 100 : 30)
+        }, torchDuration)
       }
     }, Math.max(0, delay))
   }, [])
@@ -145,6 +157,7 @@ export default function MetronomePage() {
   const scheduler = useCallback(() => {
     const ctx = getAudioCtx()
     const spb = calcSecondsPerBeat(bpmRef.current, timeSigRef.current.division)
+    spbRef.current = spb
     const swingRatio = swingRef.current / 100
     const scheduleAhead = 0.1
 
@@ -174,6 +187,7 @@ export default function MetronomePage() {
     if (schedulerTimerRef.current) clearTimeout(schedulerTimerRef.current)
     setIsPlaying(false)
     setCurrentBeat(-1)
+    torchIsOnRef.current = false
     torchTrackRef.current?.applyConstraints({ advanced: [{ torch: false } as MediaTrackConstraintSet] })
   }, [])
 
@@ -237,7 +251,7 @@ export default function MetronomePage() {
       {flashEnabled && (
         <div
           className="pointer-events-none fixed inset-0 z-50 transition-opacity duration-75"
-          style={{ backgroundColor: 'white', opacity: screenFlash ? 0.35 : 0 }}
+          style={{ backgroundColor: 'white', opacity: screenFlash ? (screenFlashStrong ? 0.7 : 0.4) : 0 }}
         />
       )}
 
@@ -248,22 +262,23 @@ export default function MetronomePage() {
 
         {/* BPM */}
         <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-6 flex flex-col gap-5">
-          <div className="flex items-center justify-center gap-4">
-            <button onClick={() => handleBpmInput(bpm - 5)} className="w-10 h-10 rounded-full bg-zinc-700 text-white font-bold hover:bg-zinc-600 transition-colors flex-shrink-0">-5</button>
-            <button onClick={() => handleBpmInput(bpm - 1)} className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors flex-shrink-0">-1</button>
-            <div className="text-center min-w-[100px]">
-              <input
-                type="number"
-                value={bpm}
-                min={40}
-                max={240}
-                onChange={e => handleBpmInput(Number(e.target.value))}
-                className="text-6xl font-bold text-white bg-transparent text-center w-full outline-none"
-              />
-              <p className="text-zinc-400 text-sm">BPM</p>
-            </div>
-            <button onClick={() => handleBpmInput(bpm + 1)} className="w-9 h-9 rounded-full bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors flex-shrink-0">+1</button>
-            <button onClick={() => handleBpmInput(bpm + 5)} className="w-10 h-10 rounded-full bg-zinc-700 text-white font-bold hover:bg-zinc-600 transition-colors flex-shrink-0">+5</button>
+          <div className="text-center">
+            <input
+              type="number"
+              value={bpm}
+              min={40}
+              max={240}
+              onChange={e => handleBpmInput(Number(e.target.value))}
+              className="text-7xl font-bold text-white bg-transparent text-center w-full outline-none"
+            />
+            <p className="text-zinc-400 text-sm -mt-1">BPM</p>
+          </div>
+          <div className="flex items-center justify-center gap-3">
+            <button onClick={() => handleBpmInput(bpm - 5)} className="w-12 h-12 rounded-full bg-zinc-700 text-white font-bold hover:bg-zinc-600 transition-colors text-sm flex-shrink-0">-5</button>
+            <button onClick={() => handleBpmInput(bpm - 1)} className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors text-sm flex-shrink-0">-1</button>
+            <div className="w-12 flex-shrink-0" />
+            <button onClick={() => handleBpmInput(bpm + 1)} className="w-10 h-10 rounded-full bg-zinc-800 text-zinc-300 hover:bg-zinc-700 transition-colors text-sm flex-shrink-0">+1</button>
+            <button onClick={() => handleBpmInput(bpm + 5)} className="w-12 h-12 rounded-full bg-zinc-700 text-white font-bold hover:bg-zinc-600 transition-colors text-sm flex-shrink-0">+5</button>
           </div>
           <input
             type="range" min={40} max={240} value={bpm}
