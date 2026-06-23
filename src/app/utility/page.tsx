@@ -10,6 +10,18 @@ const TOOLS = [
     title: '피치 / 속도 조절',
     desc: '오디오 파일의 피치와 재생 속도를 독립적으로 조절해 합주 연습을 도와줘요.',
   },
+  {
+    href: '/utility/metronome',
+    icon: '🥁',
+    title: '메트로놈',
+    desc: '다양한 박자와 BPM으로 정확한 템포 연습을 해요. 화면·플래시 깜빡임 지원.',
+  },
+  {
+    href: '/utility/tuner',
+    icon: '🎸',
+    title: '튜너',
+    desc: '마이크로 악기 음정을 실시간 감지해요. 기타·베이스 튜닝 참고 패널 포함.',
+  },
 ]
 
 export default function UtilityPage() {
