@@ -254,9 +254,17 @@ export default function PitchSpeedPage() {
             <div className="flex justify-center">
               <button
                 onClick={isPlaying ? pause : play}
-                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center justify-center text-[#ffffff] text-2xl"
+                className="w-14 h-14 rounded-full bg-emerald-600 hover:bg-emerald-500 transition-colors flex items-center justify-center text-[#ffffff]"
               >
-                {isPlaying ? '⏸' : '▶'}
+                {isPlaying ? (
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -283,7 +291,7 @@ export default function PitchSpeedPage() {
                 onChange={e => handleTempoChange(parseFloat(e.target.value))}
                 className="w-full accent-emerald-500 cursor-pointer"
               />
-              <div className="relative h-4 text-xs text-zinc-600">
+              <div className="relative h-4 text-xs text-zinc-400">
                 <span className="absolute left-0">0.5x</span>
                 <span className="absolute -translate-x-1/2" style={{ left: '33.33%' }}>1.0x</span>
                 <span className="absolute right-0">2.0x</span>
@@ -315,7 +323,7 @@ export default function PitchSpeedPage() {
                 onChange={e => handlePitchChange(parseInt(e.target.value))}
                 className="w-full accent-blue-500 cursor-pointer"
               />
-              <div className="flex justify-between text-xs text-zinc-600">
+              <div className="flex justify-between text-xs text-zinc-400">
                 <span>-12</span>
                 <span>0</span>
                 <span>+12</span>
