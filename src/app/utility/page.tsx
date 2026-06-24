@@ -22,6 +22,12 @@ const TOOLS = [
     title: '튜너',
     desc: '마이크로 악기 음정을 실시간 감지해요. 기타·베이스 튜닝 참고 패널 포함.',
   },
+  {
+    href: '/utility/chord-chart',
+    icon: '🎵',
+    title: '코드 차트',
+    desc: '기타 코드 다이어그램을 확인해요. 루트음과 코드 타입을 선택하면 포지션을 보여줘요.',
+  },
 ]
 
 export default function UtilityPage() {
