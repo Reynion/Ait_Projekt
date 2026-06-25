@@ -16,32 +16,25 @@ interface ChordPosition {
   midi: number[]
 }
 
-function midiToFreq(midi: number) {
-  return 440 * Math.pow(2, (midi - 69) / 12)
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+
+function midiToNoteName(midi: number) {
+  const note = NOTE_NAMES[midi % 12]
+  const octave = Math.floor(midi / 12) - 1
+  return `${note}${octave}`
 }
 
-function playChord(midi: number[]) {
-  const ctx = new AudioContext()
+async function playChord(midi: number[]) {
+  const Tone = await import('tone')
+  await Tone.start()
+  const synth = new Tone.PluckSynth({
+    attackNoise: 1,
+    dampening: 4000,
+    resonance: 0.98,
+  }).toDestination()
   midi.forEach((note, i) => {
-    const freq = midiToFreq(note)
-    const time = ctx.currentTime + i * 0.055
-
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-
-    osc.type = 'triangle'
-    osc.frequency.value = freq
-
-    gain.gain.setValueAtTime(0, time)
-    gain.gain.linearRampToValueAtTime(0.25, time + 0.005)
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 1.2)
-
-    osc.start(time)
-    osc.stop(time + 1.2)
+    synth.triggerAttack(midiToNoteName(note), Tone.now() + i * 0.06)
   })
-  setTimeout(() => ctx.close(), (midi.length * 0.055 + 1.3) * 1000)
 }
 
 const CHORD_TYPES = [
