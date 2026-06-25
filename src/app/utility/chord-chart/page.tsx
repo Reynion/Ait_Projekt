@@ -13,6 +13,35 @@ interface ChordPosition {
   baseFret: number
   barres: number[]
   capo?: boolean
+  midi: number[]
+}
+
+function midiToFreq(midi: number) {
+  return 440 * Math.pow(2, (midi - 69) / 12)
+}
+
+function playChord(midi: number[]) {
+  const ctx = new AudioContext()
+  midi.forEach((note, i) => {
+    const freq = midiToFreq(note)
+    const time = ctx.currentTime + i * 0.055
+
+    const osc = ctx.createOscillator()
+    const gain = ctx.createGain()
+    osc.connect(gain)
+    gain.connect(ctx.destination)
+
+    osc.type = 'triangle'
+    osc.frequency.value = freq
+
+    gain.gain.setValueAtTime(0, time)
+    gain.gain.linearRampToValueAtTime(0.25, time + 0.005)
+    gain.gain.exponentialRampToValueAtTime(0.001, time + 1.2)
+
+    osc.start(time)
+    osc.stop(time + 1.2)
+  })
+  setTimeout(() => ctx.close(), (midi.length * 0.055 + 1.3) * 1000)
 }
 
 const CHORD_TYPES = [
@@ -197,9 +226,14 @@ export default function ChordChartPage() {
             <div className="overflow-x-auto -mx-2 px-2">
               <div className="flex gap-4 pb-2">
                 {positions.map((pos, i) => (
-                  <div key={i} className="flex flex-col items-center gap-1 shrink-0">
+                  <div key={i} className="flex flex-col items-center gap-2 shrink-0">
                     <ChordDiagram position={pos} />
-                    <span className="text-xs text-zinc-600">{i + 1}</span>
+                    <button
+                      onClick={() => playChord(pos.midi)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-lg text-xs transition-colors active:scale-95"
+                    >
+                      ▶ 소리
+                    </button>
                   </div>
                 ))}
               </div>
