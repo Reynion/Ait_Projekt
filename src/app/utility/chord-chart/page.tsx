@@ -32,6 +32,10 @@ const CHORD_TYPES = [
 
 const KEYS: string[] = guitarData.keys
 
+function toChordKey(key: string) {
+  return key.replace('#', 'sharp')
+}
+
 const N_STRINGS = 6
 const N_FRETS = 5
 const S_GAP = 22
@@ -122,7 +126,7 @@ export default function ChordChartPage() {
   const [selectedKey, setSelectedKey] = useState('C')
   const [selectedSuffix, setSelectedSuffix] = useState('major')
 
-  const allChords = (guitarData.chords[selectedKey] as { key: string; suffix: string; positions: ChordPosition[] }[]) || []
+  const allChords = (guitarData.chords[toChordKey(selectedKey)] as { key: string; suffix: string; positions: ChordPosition[] }[]) || []
   const currentChord = allChords.find(c => c.suffix === selectedSuffix)
   const positions = currentChord?.positions || []
 
