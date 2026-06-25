@@ -33,7 +33,7 @@ async function playChord(midi: number[]) {
     resonance: 0.98,
   }).toDestination()
   midi.forEach((note, i) => {
-    synth.triggerAttack(midiToNoteName(note), Tone.now() + i * 0.06)
+    synth.triggerAttack(midiToNoteName(note), Tone.now() + i * 0.03)
   })
 }
 
