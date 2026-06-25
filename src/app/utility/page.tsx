@@ -28,6 +28,18 @@ const TOOLS = [
     title: '코드 차트',
     desc: '기타 코드 다이어그램을 확인해요. 루트음과 코드 타입을 선택하면 포지션을 보여줘요.',
   },
+  {
+    href: '/utility/scale-chart',
+    icon: '🎼',
+    title: '스케일 차트',
+    desc: '기타 프렛보드에서 스케일 위치를 확인해요. Major, Minor, Pentatonic 등 8종 지원.',
+  },
+  {
+    href: '/utility/chord-finder',
+    icon: '🎹',
+    title: '화음 계산기',
+    desc: '음을 선택하면 코드명을 찾아줘요. 전위형(slash chord)도 표시해요.',
+  },
 ]
 
 export default function UtilityPage() {
