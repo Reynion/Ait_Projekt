@@ -27,11 +27,13 @@ function midiToNoteName(midi: number) {
 async function playChord(midi: number[]) {
   const Tone = await import('tone')
   await Tone.start()
+  const reverb = new Tone.Reverb({ decay: 1.8, wet: 0.18 }).toDestination()
   const synth = new Tone.PluckSynth({
-    attackNoise: 1,
-    dampening: 4000,
-    resonance: 0.98,
-  }).toDestination()
+    attackNoise: 3,
+    dampening: 2800,
+    resonance: 0.987,
+    volume: -4,
+  }).connect(reverb)
   midi.forEach((note, i) => {
     synth.triggerAttack(midiToNoteName(note), Tone.now() + i * 0.03)
   })
