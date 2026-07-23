@@ -32,6 +32,41 @@ const STATUS_TEXT: Record<Status, string> = {
   failed: '분리 실패',
 }
 
+type HistoryJob = {
+  job_id: string
+  filename: string
+  created_at: string
+  urls: SeparateUrls
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {TRACKS.map(track => (
+        <div key={track.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-lg flex-shrink-0">{track.icon}</span>
+              <span className="text-zinc-200 font-medium text-sm truncate">{track.label}</span>
+            </div>
+            <a
+              href={`${urls[track.key]}?download=${encodeURIComponent(`${baseName}_${track.key}.mp3`)}`}
+              className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+            >
+              ⬇ 다운로드
+            </a>
+          </div>
+          <audio controls src={urls[track.key]} className="w-full h-10" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function StemSplitPage() {
   const [file, setFile] = useState<File | null>(null)
   const [status, setStatus] = useState<Status>('idle')
@@ -41,11 +76,26 @@ export default function StemSplitPage() {
   const [urls, setUrls] = useState<SeparateUrls | null>(null)
 
   const [userId, setUserId] = useState<string | null>(null)
+  const [history, setHistory] = useState<HistoryJob[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+  const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function fetchHistory() {
+    try {
+      const res = await fetch('/api/separate/history', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      setHistory(data.jobs ?? [])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    fetchHistory()
   }, [])
 
   function stopPolling() {
@@ -71,6 +121,7 @@ export default function StemSplitPage() {
         if (data.status === 'completed') {
           setUrls(data.urls)
           stopPolling()
+          fetchHistory()
         } else if (data.status === 'failed') {
           setError(data.error ?? '분리 처리 중 오류가 발생했어요.')
           stopPolling()
@@ -126,6 +177,7 @@ export default function StemSplitPage() {
       }
       setStatus((data.status as Status) ?? 'queued')
       startPolling(data.job_id)
+      supabase.from('stem_jobs').insert({ job_id: data.job_id, user_id: userId, filename: f.name }).then(() => {}, () => {})
     } catch {
       setError('업로드 중 네트워크 오류가 발생했어요.')
       setStatus('failed')
@@ -216,23 +268,7 @@ export default function StemSplitPage() {
         {/* 완료 - 트랙 목록 */}
         {status === 'completed' && urls && (
           <div className="flex flex-col gap-4">
-            {TRACKS.map(track => (
-              <div key={track.key} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{track.icon}</span>
-                    <span className="text-zinc-200 font-medium text-sm">{track.label}</span>
-                  </div>
-                  <a
-                    href={`${urls[track.key]}?download=${encodeURIComponent(`${file?.name.replace(/\.[^.]+$/, '') ?? 'track'}_${track.key}.mp3`)}`}
-                    className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
-                  >
-                    ⬇ 다운로드
-                  </a>
-                </div>
-                <audio controls src={urls[track.key]} className="w-full h-10" />
-              </div>
-            ))}
+            <TrackList urls={urls} baseName={file?.name.replace(/\.[^.]+$/, '') ?? 'track'} />
             <button
               onClick={reset}
               className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-medium rounded-lg transition-colors"
@@ -241,6 +277,41 @@ export default function StemSplitPage() {
             </button>
           </div>
         )}
+
+        {/* 최근 기록 */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold text-white">최근 기록</h2>
+            <p className="text-zinc-500 text-xs mt-1">결과 파일은 생성된 지 1시간이 지나면 서버에서 자동으로 삭제돼요. 본인이 올린 기록만 보여요.</p>
+          </div>
+          {historyLoading ? (
+            <p className="text-zinc-500 text-sm">불러오는 중...</p>
+          ) : history.length === 0 ? (
+            <p className="text-zinc-500 text-sm">아직 남아있는 기록이 없어요.</p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {history.map(job => (
+                <div key={job.job_id} className="bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => setExpandedJobId(expandedJobId === job.job_id ? null : job.job_id)}
+                    className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left hover:bg-zinc-700/50 transition-colors"
+                  >
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-zinc-200 text-sm font-medium truncate">{job.filename}</span>
+                      <span className="text-zinc-500 text-xs">{formatDate(job.created_at)}</span>
+                    </div>
+                    <span className="text-zinc-500 text-sm flex-shrink-0">{expandedJobId === job.job_id ? '▲' : '▼'}</span>
+                  </button>
+                  {expandedJobId === job.job_id && (
+                    <div className="px-4 pb-4">
+                      <TrackList urls={job.urls} baseName={job.filename.replace(/\.[^.]+$/, '')} />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )
