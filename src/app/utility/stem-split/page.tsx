@@ -12,6 +12,7 @@ type SeparateUrls = {
   drums: string
   bass: string
   other: string
+  instrumental: string
 }
 
 const TRACKS: { key: keyof SeparateUrls; label: string; icon: string }[] = [
@@ -19,6 +20,7 @@ const TRACKS: { key: keyof SeparateUrls; label: string; icon: string }[] = [
   { key: 'drums', label: '드럼', icon: '🥁' },
   { key: 'bass', label: '베이스', icon: '🎸' },
   { key: 'other', label: '나머지 악기', icon: '🎹' },
+  { key: 'instrumental', label: '인스트루멘탈 (보컬 제거)', icon: '🎼' },
 ]
 
 const STATUS_TEXT: Record<Status, string> = {
@@ -222,7 +224,7 @@ export default function StemSplitPage() {
                     <span className="text-zinc-200 font-medium text-sm">{track.label}</span>
                   </div>
                   <a
-                    href={`${urls[track.key]}?download=${encodeURIComponent(`${file?.name.replace(/\.[^.]+$/, '') ?? 'track'}_${track.key}.wav`)}`}
+                    href={`${urls[track.key]}?download=${encodeURIComponent(`${file?.name.replace(/\.[^.]+$/, '') ?? 'track'}_${track.key}.mp3`)}`}
                     className="text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
                   >
                     ⬇ 다운로드
