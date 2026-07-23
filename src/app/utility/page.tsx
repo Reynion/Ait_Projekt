@@ -40,6 +40,12 @@ const TOOLS = [
     title: '화음 계산기',
     desc: '음을 선택하면 코드명을 찾아줘요. 전위형(slash chord)도 표시해요.',
   },
+  {
+    href: '/utility/stem-split',
+    icon: '🎚',
+    title: '음원 분리',
+    desc: '곡을 보컬·드럼·베이스·나머지 악기로 분리해요. 곡 길이만큼 처리 시간이 걸려요.',
+  },
 ]
 
 export default function UtilityPage() {
