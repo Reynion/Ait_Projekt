@@ -9,20 +9,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '음원 분리 서버가 현재 꺼져 있어요. 로컬 서버가 켜져 있는지 확인해주세요.' }, { status: 503 })
   }
 
-  const formData = await request.formData()
-  const file = formData.get('file')
+  const body = await request.json().catch(() => null)
+  const fileUrl = body?.file_url
 
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: '파일이 없습니다.' }, { status: 400 })
+  if (typeof fileUrl !== 'string' || !fileUrl) {
+    return NextResponse.json({ error: 'file_url이 없습니다.' }, { status: 400 })
   }
-
-  const forwardForm = new FormData()
-  forwardForm.append('file', file, file.name)
 
   const res = await fetch(`${serverUrl}/separate`, {
     method: 'POST',
-    headers: DEMUCS_API_KEY ? { 'X-API-Key': DEMUCS_API_KEY } : undefined,
-    body: forwardForm,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(DEMUCS_API_KEY ? { 'X-API-Key': DEMUCS_API_KEY } : {}),
+    },
+    body: JSON.stringify({ file_url: fileUrl }),
   })
 
   if (!res.ok) {

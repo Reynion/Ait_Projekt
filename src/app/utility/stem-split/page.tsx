@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
 type Status = 'idle' | 'uploading' | 'queued' | 'processing' | 'completed' | 'failed'
 
@@ -37,7 +38,13 @@ export default function StemSplitPage() {
   const [error, setError] = useState<string | null>(null)
   const [urls, setUrls] = useState<SeparateUrls | null>(null)
 
+  const [userId, setUserId] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+  }, [])
 
   function stopPolling() {
     if (intervalRef.current) {
@@ -81,6 +88,10 @@ export default function StemSplitPage() {
       setFileError('mp3, wav, flac, ogg, m4a 파일만 업로드할 수 있어요.')
       return
     }
+    if (!userId) {
+      setFileError('로그인 정보를 확인하는 중이에요. 잠시 후 다시 시도해주세요.')
+      return
+    }
 
     setFileError(null)
     setError(null)
@@ -89,12 +100,25 @@ export default function StemSplitPage() {
     setStatus('uploading')
 
     try {
-      const formData = new FormData()
-      formData.append('file', f)
-      const res = await fetch('/api/separate', { method: 'POST', body: formData })
+      const supabase = createClient()
+      const ext = f.name.split('.').pop()
+      const path = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('stem-uploads').upload(path, f, { contentType: f.type || undefined })
+      if (upErr) {
+        setError('파일 업로드에 실패했어요.')
+        setStatus('failed')
+        return
+      }
+      const { data: publicUrlData } = supabase.storage.from('stem-uploads').getPublicUrl(path)
+
+      const res = await fetch('/api/separate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_url: publicUrlData.publicUrl }),
+      })
       const data = await res.json()
       if (!res.ok) {
-        setError(data.error ?? '업로드에 실패했어요.')
+        setError(data.error ?? '분리 요청에 실패했어요.')
         setStatus('failed')
         return
       }
