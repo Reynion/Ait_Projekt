@@ -74,6 +74,7 @@ export default function StemSplitPage() {
   const [fileError, setFileError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [urls, setUrls] = useState<SeparateUrls | null>(null)
+  const [progress, setProgress] = useState(0)
 
   const [userId, setUserId] = useState<string | null>(null)
   const [history, setHistory] = useState<HistoryJob[]>([])
@@ -118,6 +119,7 @@ export default function StemSplitPage() {
           return
         }
         setStatus(data.status as Status)
+        setProgress(typeof data.progress === 'number' ? data.progress : 0)
         if (data.status === 'completed') {
           setUrls(data.urls)
           stopPolling()
@@ -149,6 +151,7 @@ export default function StemSplitPage() {
     setFileError(null)
     setError(null)
     setUrls(null)
+    setProgress(0)
     setFile(f)
     setStatus('uploading')
 
@@ -190,6 +193,7 @@ export default function StemSplitPage() {
     setStatus('idle')
     setError(null)
     setUrls(null)
+    setProgress(0)
     setFileError(null)
   }
 
@@ -245,6 +249,17 @@ export default function StemSplitPage() {
           <div className="bg-zinc-800 border border-zinc-700 rounded-xl p-6 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-zinc-600 border-t-emerald-500 rounded-full animate-spin" />
             <p className="text-zinc-200 text-sm font-medium">{STATUS_TEXT[status]}</p>
+            {(status === 'queued' || status === 'processing') && (
+              <div className="w-full flex flex-col gap-1.5">
+                <div className="w-full h-2 bg-zinc-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-zinc-500 text-xs text-right font-mono">{progress}%</p>
+              </div>
+            )}
             {status === 'processing' && (
               <p className="text-zinc-500 text-xs text-center">CPU로 처리해서 시간이 꽤 걸려요. 곡 길이와 비슷한 시간이 걸릴 수 있어요. 페이지를 벗어나도 서버에서는 계속 처리돼요.</p>
             )}
