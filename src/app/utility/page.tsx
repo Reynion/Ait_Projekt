@@ -46,6 +46,12 @@ const TOOLS = [
     title: '음원 분리',
     desc: '곡을 보컬·드럼·베이스·나머지 악기로 분리해요. 곡 길이만큼 처리 시간이 걸려요.',
   },
+  {
+    href: '/utility/youtube-audio',
+    icon: '📺',
+    title: '유튜브 음원 추출',
+    desc: '유튜브 링크에서 오디오만 뽑아와요. mp3로 바로 듣거나 다운로드할 수 있어요.',
+  },
 ]
 
 export default function UtilityPage() {
