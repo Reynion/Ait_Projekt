@@ -25,6 +25,13 @@ function isYoutubeUrl(url: string) {
   return /(?:youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9_-]{11}/.test(url)
 }
 
+function downloadUrl(rawUrl: string, filename: string) {
+  const name = filename.toLowerCase().endsWith('.mp3') ? filename : `${filename}.mp3`
+  const u = new URL(rawUrl)
+  u.searchParams.set('download', name)
+  return u.toString()
+}
+
 export default function YoutubeAudioPage() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
@@ -194,7 +201,7 @@ export default function YoutubeAudioPage() {
               <div className="flex items-center justify-between gap-2">
                 <span className="text-zinc-200 font-medium text-sm truncate">{result.filename}</span>
                 <a
-                  href={`${result.url}?download=${encodeURIComponent(result.filename)}`}
+                  href={downloadUrl(result.url, result.filename)}
                   className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
                 >
                   ⬇ 다운로드

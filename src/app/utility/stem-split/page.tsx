@@ -43,6 +43,12 @@ function formatDate(iso: string) {
   return new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
+function downloadUrl(rawUrl: string, filename: string) {
+  const u = new URL(rawUrl)
+  u.searchParams.set('download', filename)
+  return u.toString()
+}
+
 function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string }) {
   return (
     <div className="flex flex-col gap-3">
@@ -54,7 +60,7 @@ function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string })
               <span className="text-zinc-200 font-medium text-sm truncate">{track.label}</span>
             </div>
             <a
-              href={`${urls[track.key]}?download=${encodeURIComponent(`${baseName}_${track.key}.mp3`)}`}
+              href={downloadUrl(urls[track.key], `${baseName}_${track.key}.mp3`)}
               className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
             >
               ⬇ 다운로드
