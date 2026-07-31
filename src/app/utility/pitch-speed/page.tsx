@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import type { SoundTouchNode as SoundTouchNodeType } from '@soundtouchjs/audio-worklet'
+import { createClient } from '@/lib/supabase'
+
+function downloadUrl(rawUrl: string, filename: string) {
+  const u = new URL(rawUrl)
+  u.searchParams.set('download', filename)
+  return u.toString()
+}
 
 export default function PitchSpeedPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -16,6 +23,8 @@ export default function PitchSpeedPage() {
   const [dragging, setDragging] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
+  const [hqExporting, setHqExporting] = useState(false)
+  const [hqError, setHqError] = useState<string | null>(null)
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const audioBufferRef = useRef<AudioBuffer | null>(null)
@@ -231,6 +240,52 @@ export default function PitchSpeedPage() {
     }
   }
 
+  async function handleExportHQ() {
+    if (!file) return
+    setHqExporting(true)
+    setHqError(null)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('로그인이 필요해요.')
+
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+      const { error: upErr } = await supabase.storage.from('stem-uploads').upload(path, file, { contentType: file.type || undefined })
+      if (upErr) throw new Error('업로드에 실패했어요.')
+      const { data: publicUrlData } = supabase.storage.from('stem-uploads').getPublicUrl(path)
+
+      const res = await fetch('/api/pitch-speed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_url: publicUrlData.publicUrl, tempo, pitch }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? '처리 요청에 실패했어요.')
+
+      // 이 버튼 전용 폴링 (페이지에 기존 status 상태머신이 없으므로 간단히 반복 조회)
+      let result: { status: string; urls?: { audio: string }; error?: string } | null = null
+      for (let i = 0; i < 60; i++) {          // 최대 60회 x 2초 = 2분
+        await new Promise(r => setTimeout(r, 2000))
+        const statusRes = await fetch(`/api/separate/status/${data.job_id}`, { cache: 'no-store' })
+        const statusData = await statusRes.json()
+        if (statusData.status === 'completed') { result = statusData; break }
+        if (statusData.status === 'failed') throw new Error(statusData.error ?? '처리에 실패했어요.')
+      }
+      if (!result?.urls?.audio) throw new Error('처리 시간이 초과됐어요.')
+
+      const baseName = file.name.replace(/\.[^.]+$/, '')
+      const pitchStr = pitch > 0 ? `+${pitch}` : `${pitch}`
+      const a = document.createElement('a')
+      a.href = downloadUrl(result.urls.audio, `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x_hq.mp3`)
+      a.click()
+    } catch (e) {
+      setHqError(e instanceof Error ? e.message : '고품질 다운로드에 실패했어요.')
+    } finally {
+      setHqExporting(false)
+    }
+  }
+
   function formatTime(s: number) {
     const m = Math.floor(s / 60)
     const sec = Math.floor(s % 60)
@@ -386,22 +441,30 @@ export default function PitchSpeedPage() {
             </div>
 
             {/* 내보내기 */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleExport('wav')}
                 disabled={exporting}
-                className="flex-1 py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 min-w-[90px] py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 {exporting ? '⏳ 변환 중...' : '⬇ WAV'}
               </button>
               <button
                 onClick={() => handleExport('mp3')}
                 disabled={exporting}
-                className="flex-1 py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 min-w-[90px] py-2.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
                 {exporting ? '⏳ 변환 중...' : '⬇ MP3'}
               </button>
+              <button
+                onClick={handleExportHQ}
+                disabled={hqExporting}
+                className="flex-1 min-w-[160px] py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
+              >
+                {hqExporting ? '⏳ 처리 중...' : '☁️ 고품질 다운로드'}
+              </button>
             </div>
+            {hqError && <p className="text-red-400 text-xs text-center">{hqError}</p>}
 
           </div>
         )}
