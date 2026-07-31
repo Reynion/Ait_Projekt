@@ -3,12 +3,24 @@
 import { useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
 type Status = 'idle' | 'submitting' | 'queued' | 'processing' | 'uploading' | 'completed' | 'failed'
 
 type Result = {
   filename: string
   url: string
+}
+
+type HistoryJob = {
+  job_id: string
+  filename: string
+  created_at: string
+  url: string
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 const STATUS_TEXT: Record<Status, string> = {
@@ -40,7 +52,28 @@ export default function YoutubeAudioPage() {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<Result | null>(null)
 
+  const [userId, setUserId] = useState<string | null>(null)
+  const [history, setHistory] = useState<HistoryJob[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  async function fetchHistory() {
+    try {
+      const res = await fetch('/api/youtube-audio/history', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      setHistory(data.jobs ?? [])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
+    fetchHistory()
+  }, [])
 
   function stopPolling() {
     if (intervalRef.current) {
@@ -66,6 +99,10 @@ export default function YoutubeAudioPage() {
         if (data.status === 'completed') {
           setResult({ filename: data.filename, url: data.urls?.audio })
           stopPolling()
+          if (userId) {
+            const supabase = createClient()
+            supabase.from('youtube_jobs').insert({ job_id: jobId, user_id: userId, filename: data.filename }).then(() => fetchHistory(), () => {})
+          }
         } else if (data.status === 'failed') {
           setError(data.error ?? '추출 중 오류가 발생했어요.')
           stopPolling()
@@ -137,6 +174,7 @@ export default function YoutubeAudioPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">📺 유튜브 음원 추출</h1>
           <p className="text-zinc-400 text-sm mt-1">유튜브 링크를 넣으면 오디오만 뽑아서 mp3로 만들어줘요.</p>
+          <p className="text-zinc-500 text-xs mt-1">추출된 파일은 15분 후 서버에서 자동으로 삭제돼요.</p>
         </div>
 
         {/* 링크 입력 */}
@@ -217,6 +255,39 @@ export default function YoutubeAudioPage() {
             </button>
           </div>
         )}
+
+        {/* 최근 기록 */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold text-white">최근 기록</h2>
+            <p className="text-zinc-500 text-xs mt-1">본인이 추출한 기록만 보여요. 15분 지나면 목록에서 사라져요.</p>
+          </div>
+          {historyLoading ? (
+            <p className="text-zinc-500 text-sm">불러오는 중...</p>
+          ) : history.length === 0 ? (
+            <p className="text-zinc-500 text-sm">아직 남아있는 기록이 없어요.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {history.map(job => (
+                <div key={job.job_id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-zinc-200 font-medium text-sm truncate">{job.filename}</span>
+                      <span className="text-zinc-500 text-xs">{formatDate(job.created_at)}</span>
+                    </div>
+                    <a
+                      href={downloadUrl(job.url, job.filename)}
+                      className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+                    >
+                      ⬇ 다운로드
+                    </a>
+                  </div>
+                  <audio controls src={job.url} className="w-full h-10" />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )
