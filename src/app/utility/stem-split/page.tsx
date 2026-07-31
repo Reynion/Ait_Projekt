@@ -308,7 +308,7 @@ function StemSplitContent() {
 
         <div>
           <h1 className="text-2xl font-bold text-white">🎚 음원 분리</h1>
-          <p className="text-zinc-400 text-sm mt-1">곡을 보컬·드럼·베이스·나머지 악기로 분리해요. 곡 길이만큼 처리 시간이 걸릴 수 있어요.</p>
+          <p className="text-zinc-400 text-sm mt-1">곡을 보컬·드럼·베이스·기타·인스트루멘탈로 분리해요. 고품질 모델을 써서 곡 길이보다 오래 걸릴 수 있어요.</p>
         </div>
 
         {/* 외부에서 가져온 파일 */}
@@ -372,7 +372,7 @@ function StemSplitContent() {
               </div>
             )}
             {status === 'processing' && (
-              <p className="text-zinc-500 text-xs text-center">CPU로 처리해서 시간이 꽤 걸려요. 곡 길이와 비슷한 시간이 걸릴 수 있어요. 페이지를 벗어나도 서버에서는 계속 처리돼요.</p>
+              <p className="text-zinc-500 text-xs text-center">CPU로 처리해서 시간이 꽤 걸려요. 곡 길이보다 오래 걸릴 수 있어요. 페이지를 벗어나도 서버에서는 계속 처리돼요.</p>
             )}
           </div>
         )}

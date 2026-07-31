@@ -496,7 +496,9 @@ function PitchSpeedContent() {
             </div>
 
             {/* 내보내기 */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-xs text-zinc-500">WAV/MP3는 브라우저에서 바로 처리(빠름), 고품질은 서버에서 처리(더 좋은 음질, 시간 걸림)</p>
+              <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleExport('wav')}
                 disabled={exporting}
@@ -518,6 +520,7 @@ function PitchSpeedContent() {
               >
                 {hqExporting ? '⏳ 처리 중...' : '☁️ 고품질로 처리하기'}
               </button>
+              </div>
             </div>
 
             {/* 고품질 처리 진행 상태 */}
