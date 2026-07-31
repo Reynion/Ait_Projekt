@@ -324,7 +324,13 @@ export default function StemSplitPage() {
                     <span className="text-zinc-500 text-sm flex-shrink-0">{expandedJobId === job.job_id ? '▲' : '▼'}</span>
                   </button>
                   {expandedJobId === job.job_id && (
-                    <div className="px-4 pb-4">
+                    <div className="px-4 pb-4 flex flex-col gap-3">
+                      <Link
+                        href={`/utility/stem-split/mix/${job.job_id}?filename=${encodeURIComponent(job.filename)}`}
+                        className="w-fit text-xs text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        🎚 믹스 만들기
+                      </Link>
                       <TrackList urls={job.urls} baseName={job.filename.replace(/\.[^.]+$/, '')} />
                     </div>
                   )}
