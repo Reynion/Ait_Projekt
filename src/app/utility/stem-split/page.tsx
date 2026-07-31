@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
@@ -52,27 +53,40 @@ function downloadUrl(rawUrl: string, filename: string) {
   return u.toString()
 }
 
+function pitchSpeedHref(url: string, filename: string) {
+  return `/utility/pitch-speed?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`
+}
+
 function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string }) {
   const available = TRACKS.filter(track => urls[track.key])
   return (
     <div className="flex flex-col gap-3">
-      {available.map(track => (
-        <div key={track.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="text-lg flex-shrink-0">{track.icon}</span>
-              <span className="text-zinc-200 font-medium text-sm truncate">{track.label}</span>
+      {available.map(track => {
+        const trackFilename = `${baseName}_${track.key}.mp3`
+        return (
+          <div key={track.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-lg flex-shrink-0">{track.icon}</span>
+                <span className="text-zinc-200 font-medium text-sm truncate">{track.label}</span>
+              </div>
+              <a
+                href={downloadUrl(urls[track.key], trackFilename)}
+                className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+              >
+                ⬇ 다운로드
+              </a>
             </div>
-            <a
-              href={downloadUrl(urls[track.key], `${baseName}_${track.key}.mp3`)}
-              className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+            <audio controls src={urls[track.key]} className="w-full h-10" />
+            <Link
+              href={pitchSpeedHref(urls[track.key], trackFilename)}
+              className="w-fit text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
             >
-              ⬇ 다운로드
-            </a>
+              🎛 피치·속도 조절하기
+            </Link>
           </div>
-          <audio controls src={urls[track.key]} className="w-full h-10" />
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -82,26 +96,38 @@ function MixList({ mixes, baseName }: { mixes: MixResult[]; baseName: string }) 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-zinc-500">🎚 믹스 결과</p>
-      {mixes.map(mix => (
-        <div key={mix.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="text-zinc-200 font-medium text-sm truncate">{mix.label}</span>
-            <a
-              href={downloadUrl(mix.url, `${baseName}_${mix.key}.mp3`)}
-              className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+      {mixes.map(mix => {
+        const mixFilename = `${baseName}_${mix.key}.mp3`
+        return (
+          <div key={mix.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-zinc-200 font-medium text-sm truncate">{mix.label}</span>
+              <a
+                href={downloadUrl(mix.url, mixFilename)}
+                className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+              >
+                ⬇ 다운로드
+              </a>
+            </div>
+            <audio controls src={mix.url} className="w-full h-10" />
+            <Link
+              href={pitchSpeedHref(mix.url, mixFilename)}
+              className="w-fit text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
             >
-              ⬇ 다운로드
-            </a>
+              🎛 피치·속도 조절하기
+            </Link>
           </div>
-          <audio controls src={mix.url} className="w-full h-10" />
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
 
-export default function StemSplitPage() {
+function StemSplitContent() {
+  const searchParams = useSearchParams()
   const [file, setFile] = useState<File | null>(null)
+  const [sourceFilename, setSourceFilename] = useState<string | null>(null)
+  const [externalUrl, setExternalUrl] = useState<string | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [dragging, setDragging] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
@@ -114,6 +140,15 @@ export default function StemSplitPage() {
   const [historyLoading, setHistoryLoading] = useState(true)
   const [expandedJobId, setExpandedJobId] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    const url = searchParams.get('file_url')
+    const name = searchParams.get('filename')
+    if (url && name) {
+      setExternalUrl(url)
+      setSourceFilename(name)
+    }
+  }, [searchParams])
 
   async function fetchHistory() {
     try {
@@ -169,6 +204,31 @@ export default function StemSplitPage() {
     }, 4000)
   }
 
+  async function requestSeparation(fileUrl: string, filename: string) {
+    try {
+      const supabase = createClient()
+      const res = await fetch('/api/separate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file_url: fileUrl }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error ?? '분리 요청에 실패했어요.')
+        setStatus('failed')
+        return
+      }
+      setStatus((data.status as Status) ?? 'queued')
+      startPolling(data.job_id)
+      if (userId) {
+        supabase.from('stem_jobs').insert({ job_id: data.job_id, user_id: userId, filename }).then(() => {}, () => {})
+      }
+    } catch {
+      setError('요청 중 네트워크 오류가 발생했어요.')
+      setStatus('failed')
+    }
+  }
+
   async function handleFile(f: File) {
     const validMimeTypes = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/flac', 'audio/x-flac', 'audio/ogg', 'audio/mp4', 'audio/x-m4a']
     const isValidType = validMimeTypes.includes(f.type) || /\.(mp3|wav|flac|ogg|m4a)$/i.test(f.name)
@@ -186,6 +246,8 @@ export default function StemSplitPage() {
     setUrls(null)
     setProgress(0)
     setFile(f)
+    setSourceFilename(f.name)
+    setExternalUrl(null)
     setStatus('uploading')
 
     try {
@@ -199,30 +261,30 @@ export default function StemSplitPage() {
         return
       }
       const { data: publicUrlData } = supabase.storage.from('stem-uploads').getPublicUrl(path)
-
-      const res = await fetch('/api/separate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file_url: publicUrlData.publicUrl }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setError(data.error ?? '분리 요청에 실패했어요.')
-        setStatus('failed')
-        return
-      }
-      setStatus((data.status as Status) ?? 'queued')
-      startPolling(data.job_id)
-      supabase.from('stem_jobs').insert({ job_id: data.job_id, user_id: userId, filename: f.name }).then(() => {}, () => {})
+      await requestSeparation(publicUrlData.publicUrl, f.name)
     } catch {
       setError('업로드 중 네트워크 오류가 발생했어요.')
       setStatus('failed')
     }
   }
 
+  async function handleStartExternal() {
+    if (!externalUrl || !sourceFilename) return
+    if (!userId) {
+      setError('로그인 정보를 확인하는 중이에요. 잠시 후 다시 시도해주세요.')
+      return
+    }
+    setError(null)
+    setUrls(null)
+    setProgress(0)
+    setStatus('queued')
+    await requestSeparation(externalUrl, sourceFilename)
+  }
+
   function reset() {
     stopPolling()
     setFile(null)
+    setExternalUrl(null)
     setStatus('idle')
     setError(null)
     setUrls(null)
@@ -248,6 +310,22 @@ export default function StemSplitPage() {
           <h1 className="text-2xl font-bold text-white">🎚 음원 분리</h1>
           <p className="text-zinc-400 text-sm mt-1">곡을 보컬·드럼·베이스·나머지 악기로 분리해요. 곡 길이만큼 처리 시간이 걸릴 수 있어요.</p>
         </div>
+
+        {/* 외부에서 가져온 파일 */}
+        {status === 'idle' && externalUrl && sourceFilename && (
+          <div className="bg-zinc-800 border border-emerald-500/30 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-zinc-500 text-xs">🔗 다른 도구에서 가져온 파일</span>
+              <span className="text-zinc-200 text-sm font-medium truncate">{sourceFilename}</span>
+            </div>
+            <button
+              onClick={handleStartExternal}
+              className="flex-shrink-0 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors"
+            >
+              분리 시작
+            </button>
+          </div>
+        )}
 
         {/* 파일 업로드 */}
         <label
@@ -316,7 +394,7 @@ export default function StemSplitPage() {
         {/* 완료 - 트랙 목록 */}
         {status === 'completed' && urls && (
           <div className="flex flex-col gap-4">
-            <TrackList urls={urls} baseName={file?.name.replace(/\.[^.]+$/, '') ?? 'track'} />
+            <TrackList urls={urls} baseName={sourceFilename?.replace(/\.[^.]+$/, '') ?? 'track'} />
             <button
               onClick={reset}
               className="w-full py-2.5 bg-zinc-700 hover:bg-zinc-600 text-white text-sm font-medium rounded-lg transition-colors"
@@ -369,5 +447,13 @@ export default function StemSplitPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function StemSplitPage() {
+  return (
+    <Suspense fallback={null}>
+      <StemSplitContent />
+    </Suspense>
   )
 }

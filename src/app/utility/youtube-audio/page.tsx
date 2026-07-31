@@ -44,6 +44,20 @@ function downloadUrl(rawUrl: string, filename: string) {
   return u.toString()
 }
 
+function SendToButtons({ url, filename }: { url: string; filename: string }) {
+  const linkClass = "text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+  return (
+    <div className="flex flex-wrap gap-2">
+      <Link href={`/utility/stem-split?file_url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`} className={linkClass}>
+        🎚 음원 분리하기
+      </Link>
+      <Link href={`/utility/pitch-speed?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`} className={linkClass}>
+        🎛 피치·속도 조절하기
+      </Link>
+    </div>
+  )
+}
+
 export default function YoutubeAudioPage() {
   const [url, setUrl] = useState('')
   const [status, setStatus] = useState<Status>('idle')
@@ -246,6 +260,7 @@ export default function YoutubeAudioPage() {
                 </a>
               </div>
               <audio controls src={result.url} className="w-full h-10" />
+              <SendToButtons url={result.url} filename={result.filename} />
             </div>
             <button
               onClick={reset}
@@ -283,6 +298,7 @@ export default function YoutubeAudioPage() {
                     </a>
                   </div>
                   <audio controls src={job.url} className="w-full h-10" />
+                  <SendToButtons url={job.url} filename={job.filename} />
                 </div>
               ))}
             </div>

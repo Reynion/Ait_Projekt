@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import Link from 'next/link'
 import type { SoundTouchNode as SoundTouchNodeType } from '@soundtouchjs/audio-worklet'
@@ -12,7 +13,19 @@ function downloadUrl(rawUrl: string, filename: string) {
   return u.toString()
 }
 
-export default function PitchSpeedPage() {
+type HqResult = { url: string; filename: string }
+type HistoryJob = { job_id: string; filename: string; created_at: string; url: string }
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+function stemSplitHref(url: string, filename: string) {
+  return `/utility/stem-split?file_url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`
+}
+
+function PitchSpeedContent() {
+  const searchParams = useSearchParams()
   const [file, setFile] = useState<File | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -24,7 +37,45 @@ export default function PitchSpeedPage() {
   const [exporting, setExporting] = useState(false)
   const [fileError, setFileError] = useState<string | null>(null)
   const [hqExporting, setHqExporting] = useState(false)
+  const [hqProgress, setHqProgress] = useState(0)
   const [hqError, setHqError] = useState<string | null>(null)
+  const [hqResult, setHqResult] = useState<HqResult | null>(null)
+
+  const [history, setHistory] = useState<HistoryJob[]>([])
+  const [historyLoading, setHistoryLoading] = useState(true)
+
+  async function fetchHistory() {
+    try {
+      const res = await fetch('/api/pitch-speed/history', { cache: 'no-store' })
+      if (!res.ok) return
+      const data = await res.json()
+      setHistory(data.jobs ?? [])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchHistory()
+  }, [])
+
+  useEffect(() => {
+    const url = searchParams.get('url')
+    const name = searchParams.get('filename')
+    if (!url || !name) return
+    ;(async () => {
+      try {
+        const res = await fetch(url)
+        if (!res.ok) throw new Error()
+        const blob = await res.blob()
+        const f = new File([blob], name, { type: blob.type || 'audio/mpeg' })
+        await handleFile(f)
+      } catch {
+        setFileError('외부 파일을 불러오지 못했어요. 이미 만료됐을 수 있어요.')
+      }
+    })()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const audioCtxRef = useRef<AudioContext | null>(null)
   const audioBufferRef = useRef<AudioBuffer | null>(null)
@@ -243,7 +294,9 @@ export default function PitchSpeedPage() {
   async function handleExportHQ() {
     if (!file) return
     setHqExporting(true)
+    setHqProgress(0)
     setHqError(null)
+    setHqResult(null)
     try {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
@@ -269,6 +322,7 @@ export default function PitchSpeedPage() {
         await new Promise(r => setTimeout(r, 2000))
         const statusRes = await fetch(`/api/separate/status/${data.job_id}`, { cache: 'no-store' })
         const statusData = await statusRes.json()
+        setHqProgress(typeof statusData.progress === 'number' ? statusData.progress : 0)
         if (statusData.status === 'completed') { result = statusData; break }
         if (statusData.status === 'failed') throw new Error(statusData.error ?? '처리에 실패했어요.')
       }
@@ -276,9 +330,10 @@ export default function PitchSpeedPage() {
 
       const baseName = file.name.replace(/\.[^.]+$/, '')
       const pitchStr = pitch > 0 ? `+${pitch}` : `${pitch}`
-      const a = document.createElement('a')
-      a.href = downloadUrl(result.urls.audio, `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x_hq.mp3`)
-      a.click()
+      const resultFilename = `${baseName}_pitch${pitchStr}_speed${tempo.toFixed(2)}x_hq.mp3`
+      setHqResult({ url: result.urls.audio, filename: resultFilename })
+
+      supabase.from('pitch_speed_jobs').insert({ job_id: data.job_id, user_id: user.id, filename: resultFilename }).then(() => fetchHistory(), () => {})
     } catch (e) {
       setHqError(e instanceof Error ? e.message : '고품질 다운로드에 실패했어요.')
     } finally {
@@ -461,14 +516,96 @@ export default function PitchSpeedPage() {
                 disabled={hqExporting}
                 className="flex-1 min-w-[160px] py-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-1.5"
               >
-                {hqExporting ? '⏳ 처리 중...' : '☁️ 고품질 다운로드'}
+                {hqExporting ? '⏳ 처리 중...' : '☁️ 고품질로 처리하기'}
               </button>
             </div>
+
+            {/* 고품질 처리 진행 상태 */}
+            {hqExporting && (
+              <div className="flex flex-col gap-1.5">
+                <div className="w-full h-2 bg-zinc-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${hqProgress}%` }}
+                  />
+                </div>
+                <p className="text-zinc-500 text-xs text-right font-mono">{hqProgress}%</p>
+              </div>
+            )}
             {hqError && <p className="text-red-400 text-xs text-center">{hqError}</p>}
+
+            {/* 고품질 처리 결과 */}
+            {hqResult && (
+              <div className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-zinc-200 font-medium text-sm truncate">{hqResult.filename}</span>
+                  <a
+                    href={downloadUrl(hqResult.url, hqResult.filename)}
+                    className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+                  >
+                    ⬇ 다운로드
+                  </a>
+                </div>
+                <audio controls src={hqResult.url} className="w-full h-10" />
+                <Link
+                  href={stemSplitHref(hqResult.url, hqResult.filename)}
+                  className="w-fit text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+                >
+                  🎚 음원 분리하기
+                </Link>
+              </div>
+            )}
 
           </div>
         )}
+
+        {/* 최근 기록 */}
+        <div className="flex flex-col gap-3 pt-4 border-t border-zinc-800">
+          <div>
+            <h2 className="text-lg font-semibold text-white">최근 기록</h2>
+            <p className="text-zinc-500 text-xs mt-1">고품질로 처리한 기록만 보여요(클라이언트 변환은 기록 안 남음). 본인 것만, 15분 지나면 사라져요.</p>
+          </div>
+          {historyLoading ? (
+            <p className="text-zinc-500 text-sm">불러오는 중...</p>
+          ) : history.length === 0 ? (
+            <p className="text-zinc-500 text-sm">아직 남아있는 기록이 없어요.</p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {history.map(job => (
+                <div key={job.job_id} className="bg-zinc-800 border border-zinc-700 rounded-xl p-4 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-zinc-200 font-medium text-sm truncate">{job.filename}</span>
+                      <span className="text-zinc-500 text-xs">{formatDate(job.created_at)}</span>
+                    </div>
+                    <a
+                      href={downloadUrl(job.url, job.filename)}
+                      className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+                    >
+                      ⬇ 다운로드
+                    </a>
+                  </div>
+                  <audio controls src={job.url} className="w-full h-10" />
+                  <Link
+                    href={stemSplitHref(job.url, job.filename)}
+                    className="w-fit text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+                  >
+                    🎚 음원 분리하기
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
+  )
+}
+
+export default function PitchSpeedPage() {
+  return (
+    <Suspense fallback={null}>
+      <PitchSpeedContent />
+    </Suspense>
   )
 }
