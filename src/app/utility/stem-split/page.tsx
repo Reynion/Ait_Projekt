@@ -32,11 +32,14 @@ const STATUS_TEXT: Record<Status, string> = {
   failed: '분리 실패',
 }
 
+type MixResult = { key: string; label: string; url: string }
+
 type HistoryJob = {
   job_id: string
   filename: string
   created_at: string
   urls: SeparateUrls
+  mixes: MixResult[]
 }
 
 function formatDate(iso: string) {
@@ -50,9 +53,10 @@ function downloadUrl(rawUrl: string, filename: string) {
 }
 
 function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string }) {
+  const available = TRACKS.filter(track => urls[track.key])
   return (
     <div className="flex flex-col gap-3">
-      {TRACKS.map(track => (
+      {available.map(track => (
         <div key={track.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 min-w-0">
@@ -67,6 +71,29 @@ function TrackList({ urls, baseName }: { urls: SeparateUrls; baseName: string })
             </a>
           </div>
           <audio controls src={urls[track.key]} className="w-full h-10" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function MixList({ mixes, baseName }: { mixes: MixResult[]; baseName: string }) {
+  if (mixes.length === 0) return null
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-zinc-500">🎚 믹스 결과</p>
+      {mixes.map(mix => (
+        <div key={mix.key} className="bg-zinc-900 border border-zinc-700 rounded-lg p-3 flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <span className="text-zinc-200 font-medium text-sm truncate">{mix.label}</span>
+            <a
+              href={downloadUrl(mix.url, `${baseName}_${mix.key}.mp3`)}
+              className="flex-shrink-0 text-xs text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 px-2 py-1 rounded transition-colors"
+            >
+              ⬇ 다운로드
+            </a>
+          </div>
+          <audio controls src={mix.url} className="w-full h-10" />
         </div>
       ))}
     </div>
@@ -332,6 +359,7 @@ export default function StemSplitPage() {
                         🎚 믹스 만들기
                       </Link>
                       <TrackList urls={job.urls} baseName={job.filename.replace(/\.[^.]+$/, '')} />
+                      <MixList mixes={job.mixes} baseName={job.filename.replace(/\.[^.]+$/, '')} />
                     </div>
                   )}
                 </div>
