@@ -14,7 +14,7 @@ const TOOLS = [
     href: '/utility/stem-split',
     icon: '🎚',
     title: '음원 분리',
-    desc: '곡을 보컬·드럼·베이스·기타·인스트루멘탈로 분리해요. 곡 길이보다 오래 걸릴 수 있어요.',
+    desc: '곡을 보컬·드럼·베이스·나머지 악기·인스트루멘탈로 분리해요. 곡 길이보다 오래 걸릴 수 있어요.',
   },
   {
     href: '/utility/youtube-audio',
